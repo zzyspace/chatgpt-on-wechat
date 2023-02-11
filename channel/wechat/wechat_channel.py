@@ -9,7 +9,7 @@ from itchat.content import *
 from channel.channel import Channel
 from concurrent.futures import ThreadPoolExecutor
 from common.log import logger
-from config import conf
+from config import conf, dynamic_conf
 import requests
 import io
 
@@ -46,31 +46,33 @@ class WechatChannel(Channel):
         other_user_id = msg['User']['UserName']     # 对手方id
         content = msg['Text']
         match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
-        if from_user_id == other_user_id and match_prefix is not None:
-            # 好友向自己发送消息
-            if match_prefix != '':
+        match_payment = self.check_payment(msg['User']['NickName'])
+        if match_payment:
+            if from_user_id == other_user_id and match_prefix is not None:
+                # 好友向自己发送消息
+                if match_prefix != '':
+                    str_list = content.split(match_prefix, 1)
+                    if len(str_list) == 2:
+                        content = str_list[1].strip()
+
+                img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
+                if img_match_prefix:
+                    content = content.split(img_match_prefix, 1)[1].strip()
+                    thread_pool.submit(self._do_send_img, content, from_user_id)
+                else:
+                    thread_pool.submit(self._do_send, content, from_user_id)
+
+            elif to_user_id == other_user_id and match_prefix:
+                # 自己给好友发送消息
                 str_list = content.split(match_prefix, 1)
                 if len(str_list) == 2:
                     content = str_list[1].strip()
-
-            img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
-            if img_match_prefix:
-                content = content.split(img_match_prefix, 1)[1].strip()
-                thread_pool.submit(self._do_send_img, content, from_user_id)
-            else:
-                thread_pool.submit(self._do_send, content, from_user_id)
-
-        elif to_user_id == other_user_id and match_prefix:
-            # 自己给好友发送消息
-            str_list = content.split(match_prefix, 1)
-            if len(str_list) == 2:
-                content = str_list[1].strip()
-            img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
-            if img_match_prefix:
-                content = content.split(img_match_prefix, 1)[1].strip()
-                thread_pool.submit(self._do_send_img, content, to_user_id)
-            else:
-                thread_pool.submit(self._do_send, content, to_user_id)
+                img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
+                if img_match_prefix:
+                    content = content.split(img_match_prefix, 1)[1].strip()
+                    thread_pool.submit(self._do_send_img, content, to_user_id)
+                else:
+                    thread_pool.submit(self._do_send, content, to_user_id)
 
 
     def handle_group(self, msg):
@@ -161,5 +163,13 @@ class WechatChannel(Channel):
             return None
         for ky in keyword_list:
             if content.find(ky) != -1:
+                return True
+        return None
+
+    def check_payment(self, nickname):
+        white_list = json.loads(dynamic_conf()['white_list']['ids'])
+
+        for white_nickname in white_list:
+            if white_nickname == nickname:
                 return True
         return None

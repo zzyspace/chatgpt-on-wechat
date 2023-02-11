@@ -1,7 +1,7 @@
 # encoding:utf-8
 
 from bot.bot import Bot
-from config import conf
+from config import conf, dynamic_conf
 from common.log import logger
 import openai
 import time
@@ -11,7 +11,8 @@ user_session = dict()
 # OpenAI对话模型API (可用)
 class OpenAIBot(Bot):
     def __init__(self):
-        openai.api_key = conf().get('open_ai_api_key')
+        # openai.api_key = conf().get('open_ai_api_key')
+        openai.api_key = dynamic_conf()['global']['api_key']
 
     def reply(self, query, context=None):
 
