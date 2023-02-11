@@ -16,8 +16,8 @@ thread_pool = ThreadPoolExecutor(max_workers=8)
 
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
-    # def __init__(self):
-    #     pass
+    #def __init__(self):
+    #    pass
 
     # Request Handler
 
@@ -52,7 +52,8 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             }
         }
 
-        notify_url = f"https://oapi.dingtalk.com/robot/send?access_token={dd_token}"
+        
+        notify_url = f"https://oapi.dingtalk.com/robot/send?access_token={dynamic_conf()['global']['dd_token']}"
         try:
             r = requests.post(notify_url, json=data)
             reply = r.json()
