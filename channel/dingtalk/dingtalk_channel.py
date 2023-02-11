@@ -30,7 +30,9 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         data = json.loads(request_data)
         # msg = data['text']['content']
 
-        return self.handle(data)
+        write = self.handle(data)
+        logger.info("6", write)
+        return write
 
     def write_json(self, struct):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
@@ -88,15 +90,13 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                 if len(str_list) == 2:
                     content = str_list[1].strip()
             
-                img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
-                if img_match_prefix:
-                    content = content.split(img_match_prefix, 1)[1].strip()
-                    return thread_pool.submit(self._do_send_img, content, from_user_id)
-                else:
-                    logger.debug(2)
-                    return thread_pool.submit(self._do_send, content, from_user_id)
-            
-            return self.write_json({"ret": 400})
+            img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
+            if img_match_prefix:
+                content = content.split(img_match_prefix, 1)[1].strip()
+                return thread_pool.submit(self._do_send_img, content, from_user_id)
+            else:
+                logger.debug(2)
+                return thread_pool.submit(self._do_send, content, from_user_id)
         
         return self.write_json({"ret": 400})
 
