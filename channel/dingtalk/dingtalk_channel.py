@@ -16,8 +16,8 @@ thread_pool = ThreadPoolExecutor(max_workers=8)
 
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
-    def __init__(self):
-        pass
+    # def __init__(self):
+    #     pass
 
     # Request Handler
 
@@ -62,6 +62,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
     # Channel
 
+    @classmethod
     def startup(self):
         # 运行服务
         loop = asyncio.get_event_loop()
@@ -76,9 +77,12 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         content = msg['text']['content']
         from_user_id = '' # TODO
         match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
-        match_payment = self.check_payment(msg['User']['NickName']) # TODO
+        match_payment = True #self.check_payment(msg['User']['NickName']) # TODO
+        logger.debug(f'[Ding] match: {match_prefix is not None}, {match_payment}')
+        logger.debug(content)
         if match_payment and match_prefix is not None:
             if match_prefix != '':
+                logger.debug(1)
                 str_list = content.split(match_prefix, 1)
                 if len(str_list) == 2:
                     content = str_list[1].strip()
@@ -88,6 +92,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                     content = content.split(img_match_prefix, 1)[1].strip()
                     return thread_pool.submit(self._do_send_img, content, from_user_id)
                 else:
+                    logger.debug(2)
                     return thread_pool.submit(self._do_send, content, from_user_id)
             
             return self.write_json({"ret": 400})
@@ -103,11 +108,14 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
     def _do_send(self, query, reply_user_id):
         try:
             if not query:
+                logger.debug(3)
                 return self.write_json({"ret": 400})
             context = dict()
             context['from_user_id'] = reply_user_id
             reply_text = super().build_reply_content(query, context)
             if reply_text:
+
+                logger.debug('4', reply_text)
                 return self.send(conf().get("single_chat_reply_prefix") + reply_text, reply_user_id)
             return self.write_json({"ret": 400})
         except Exception as e:

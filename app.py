@@ -14,7 +14,7 @@ if __name__ == '__main__':
         channel = channel_factory.create_channel("ding")
 
         # startup channel
-        channel.startup()
+        # channel.startup()
     except Exception as e:
         logger.error("App startup failed!")
         logger.exception(e)

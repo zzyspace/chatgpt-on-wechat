@@ -12,7 +12,7 @@ def create_channel(channel_type):
     :return: channel instance
     """
     if channel_type == 'wx':
-        return WechatChannel()
+        return WechatChannel.startup()
     if channel_type == 'ding':
-        return DingtalkChannel()
+        return DingtalkChannel.startup()
     raise RuntimeError

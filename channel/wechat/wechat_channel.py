@@ -31,7 +31,8 @@ def handler_group_msg(msg):
 class WechatChannel(Channel):
     def __init__(self):
         pass
-
+    
+    @classmethod
     def startup(self):
         # login by scan QRCode
         itchat.auto_login(enableCmdQR=2)
@@ -73,7 +74,6 @@ class WechatChannel(Channel):
                     thread_pool.submit(self._do_send_img, content, to_user_id)
                 else:
                     thread_pool.submit(self._do_send, content, to_user_id)
-
 
     def handle_group(self, msg):
         logger.debug("[WX]receive group msg: " + json.dumps(msg, ensure_ascii=False))
@@ -157,7 +157,6 @@ class WechatChannel(Channel):
             if content.startswith(prefix):
                 return prefix
         return None
-
 
     def check_contain(self, content, keyword_list):
         if not keyword_list:
