@@ -12,7 +12,7 @@ from channel.dingtalk.tornado_utils import Application, route
 from channel.channel import Channel
 from config import conf, dynamic_conf
 
-thread_pool = ThreadPoolExecutor(max_workers=8)
+# thread_pool = ThreadPoolExecutor(max_workers=8)
 
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
@@ -31,7 +31,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         # msg = data['text']['content']
 
         write = self.handle(data)
-        logger.info("6", write)
+        logger.info(write)
         return write
 
     def write_json(self, struct):
@@ -61,6 +61,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             reply = r.json()
             logger.info("dingding: " + str(reply))
         except Exception as e:
+            logger.debug(1)
             logger.error(e)
 
     # Channel
@@ -92,11 +93,12 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             
             img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
             if img_match_prefix:
-                content = content.split(img_match_prefix, 1)[1].strip()
-                return thread_pool.submit(self._do_send_img, content, from_user_id)
+                # content = content.split(img_match_prefix, 1)[1].strip()
+                # return thread_pool.submit(self._do_send_img, content, from_user_id)
+                print(3)
             else:
-                logger.debug(2)
-                return thread_pool.submit(self._do_send, content, from_user_id)
+                # return thread_pool.submit(self._do_send, content, from_user_id)
+                return self._do_send(content, from_user_id)
         
         return self.write_json({"ret": 400})
 
@@ -116,10 +118,11 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             reply_text = super().build_reply_content(query, context)
             if reply_text:
 
-                logger.debug('4', reply_text)
+                logger.debug(reply_text)
                 return self.send(conf().get("single_chat_reply_prefix") + reply_text, reply_user_id)
             return self.write_json({"ret": 400})
         except Exception as e:
+            logger.debug(2)
             logger.exception(e)
             return self.write_json({"ret": 400})
     
