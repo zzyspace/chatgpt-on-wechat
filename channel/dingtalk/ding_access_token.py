@@ -8,7 +8,7 @@ from common.log import logger
 class AccessToken:
     def __init__(self):
         self.access_token = None
-        self.interval = 10#3600  # Access token refresh interval in seconds
+        self.interval = 3600  # Access token refresh interval in seconds
         self.lock = threading.Lock()
         self.update_thread = threading.Thread(target=self.update_token, args=())
         self.update_thread.start()

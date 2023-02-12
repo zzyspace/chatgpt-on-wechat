@@ -22,8 +22,6 @@ from channel.dingtalk.ding_access_token import AccessToken
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
     _access_token = AccessToken()
-    #def __init__(self):
-    #    pass
 
     # Request Handler
 
@@ -46,11 +44,12 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
     def push_ding(self, msg, uid):
         try:
+            # https://open.dingtalk.com/document/isvapp/send-single-chat-messages-in-bulk
             app_key = dynamic_conf()['global']['ding_app_key']
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
             data=json.dumps({"robotCode":app_key,"userIds":[uid],"msgKey":"sampleText","msgParam":'{"content":"'+msg+'"}'}),
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
-            logger.info(f'[Ding] push_ding response: {resp}')
+            logger.info(f'[Ding] push_ding response: {resp.json()}')
         except Exception as e:
             logger.error(e)
 
@@ -60,7 +59,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
             data=json.dumps({"robotCode":app_key,"userIds":[uid],"msgKey":"sampleImageMsg","msgParam":'{"photoURL":"'+img+'"}'}),
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
-            logger.info(f'[Ding] push_img_ding response: {resp}')
+            logger.info(f'[Ding] push_img_ding response: {resp.json()}')
         except Exception as e:
             logger.error(e)
 
@@ -80,7 +79,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         content = msg['text']['content']
         nickname = msg['senderNick']
         from_user_id = msg['senderStaffId']
-        logger.debug(f"[Ding]receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
+        logger.info(f"[Ding] receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
 
         match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
         match_payment = self.check_payment(nickname)
@@ -93,12 +92,10 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             
             img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
             if img_match_prefix:
-                # content = content.split(img_match_prefix, 1)[1].strip()
-                # return thread_pool.submit(self._do_send_img, content, from_user_id)
-                print('')
+                content = content.split(img_match_prefix, 1)[1].strip()
+                self._do_send_img(content, from_user_id)
             else:
-                # return thread_pool.submit(self._do_send, content, from_user_id)
-                return self._do_send(content, from_user_id)
+                self._do_send(content, from_user_id)
 
 
     def send(self, msg, receiver):
