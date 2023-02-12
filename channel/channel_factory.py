@@ -3,6 +3,7 @@ channel factory
 """
 
 from channel.wechat.wechat_channel import WechatChannel
+from channel.dingtalk.dingtalk_channel import DingtalkChannel
 
 def create_channel(channel_type):
     """
@@ -11,5 +12,7 @@ def create_channel(channel_type):
     :return: channel instance
     """
     if channel_type == 'wx':
-        return WechatChannel()
+        return WechatChannel.startup()
+    if channel_type == 'ding':
+        return DingtalkChannel.startup()
     raise RuntimeError

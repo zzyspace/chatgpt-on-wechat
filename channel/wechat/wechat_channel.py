@@ -9,7 +9,7 @@ from itchat.content import *
 from channel.channel import Channel
 from concurrent.futures import ThreadPoolExecutor
 from common.log import logger
-from config import conf
+from config import conf, dynamic_conf
 import requests
 import io
 
@@ -31,8 +31,9 @@ def handler_group_msg(msg):
 class WechatChannel(Channel):
     def __init__(self):
         pass
-
-    def startup(self):
+    
+    @classmethod
+    def startup(cls):
         # login by scan QRCode
         itchat.auto_login(enableCmdQR=2)
 
@@ -40,41 +41,42 @@ class WechatChannel(Channel):
         itchat.run()
 
     def handle(self, msg):
-        logger.debug("[WX]receive msg: " + json.dumps(msg, ensure_ascii=False))
+        logger.debug("[WX] receive msg: " + json.dumps(msg, ensure_ascii=False))
         from_user_id = msg['FromUserName']
         to_user_id = msg['ToUserName']              # 接收人id
         other_user_id = msg['User']['UserName']     # 对手方id
         content = msg['Text']
         match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
-        if from_user_id == other_user_id and match_prefix is not None:
-            # 好友向自己发送消息
-            if match_prefix != '':
+        match_payment = self.check_payment(msg['User']['NickName'])
+        if match_payment:
+            if from_user_id == other_user_id and match_prefix is not None:
+                # 好友向自己发送消息
+                if match_prefix != '':
+                    str_list = content.split(match_prefix, 1)
+                    if len(str_list) == 2:
+                        content = str_list[1].strip()
+
+                img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
+                if img_match_prefix:
+                    content = content.split(img_match_prefix, 1)[1].strip()
+                    thread_pool.submit(self._do_send_img, content, from_user_id)
+                else:
+                    thread_pool.submit(self._do_send, content, from_user_id)
+
+            elif to_user_id == other_user_id and match_prefix:
+                # 自己给好友发送消息
                 str_list = content.split(match_prefix, 1)
                 if len(str_list) == 2:
                     content = str_list[1].strip()
-
-            img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
-            if img_match_prefix:
-                content = content.split(img_match_prefix, 1)[1].strip()
-                thread_pool.submit(self._do_send_img, content, from_user_id)
-            else:
-                thread_pool.submit(self._do_send, content, from_user_id)
-
-        elif to_user_id == other_user_id and match_prefix:
-            # 自己给好友发送消息
-            str_list = content.split(match_prefix, 1)
-            if len(str_list) == 2:
-                content = str_list[1].strip()
-            img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
-            if img_match_prefix:
-                content = content.split(img_match_prefix, 1)[1].strip()
-                thread_pool.submit(self._do_send_img, content, to_user_id)
-            else:
-                thread_pool.submit(self._do_send, content, to_user_id)
-
+                img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
+                if img_match_prefix:
+                    content = content.split(img_match_prefix, 1)[1].strip()
+                    thread_pool.submit(self._do_send_img, content, to_user_id)
+                else:
+                    thread_pool.submit(self._do_send, content, to_user_id)
 
     def handle_group(self, msg):
-        logger.debug("[WX]receive group msg: " + json.dumps(msg, ensure_ascii=False))
+        logger.debug("[WX] receive group msg: " + json.dumps(msg, ensure_ascii=False))
         group_name = msg['User'].get('NickName', None)
         group_id = msg['User'].get('UserName', None)
         if not group_name:
@@ -91,7 +93,8 @@ class WechatChannel(Channel):
         config = conf()
         match_prefix = (msg['IsAt'] and not config.get("group_at_off", False)) or self.check_prefix(origin_content, config.get('group_chat_prefix')) \
                        or self.check_contain(origin_content, config.get('group_chat_keyword'))
-        if (group_name in config.get('group_name_white_list') or 'ALL_GROUP' in config.get('group_name_white_list') or self.check_contain(group_name, config.get('group_name_keyword_white_list'))) and match_prefix:
+        match_payment = self.check_group_payment(group_name)
+        if (match_payment or 'ALL_GROUP' in config.get('group_name_white_list') or self.check_contain(group_name, config.get('group_name_keyword_white_list'))) and match_prefix:
             img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
             if img_match_prefix:
                 content = content.split(img_match_prefix, 1)[1].strip()
@@ -155,7 +158,6 @@ class WechatChannel(Channel):
                 return prefix
         return None
 
-
     def check_contain(self, content, keyword_list):
         if not keyword_list:
             return None
@@ -163,3 +165,11 @@ class WechatChannel(Channel):
             if content.find(ky) != -1:
                 return True
         return None
+
+    def check_payment(self, nickname):
+        white_list = json.loads(dynamic_conf()['white_list']['ids'])
+        return nickname in white_list
+
+    def check_group_payment(self, groupname):
+        group_white_list = json.loads(dynamic_conf()['group_white_list']['ids'])
+        return groupname in group_white_list

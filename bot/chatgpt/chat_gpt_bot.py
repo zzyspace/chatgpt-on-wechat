@@ -11,7 +11,7 @@ import openai
 import tiktoken
 
 from bot.bot import Bot
-from config import conf
+from config import conf, dynamic_conf
 
 ENGINE = os.environ.get("GPT_ENGINE") or "text-chat-davinci-002-20221122"
 
@@ -500,7 +500,8 @@ class ChatGPTBot(Bot):
 
     def __init__(self):
         print("create")
-        self.bot = Chatbot(conf().get('open_ai_api_key'))
+        # self.bot = Chatbot(conf().get('open_ai_api_key'))
+        self.bot = Chatbot(dynamic_conf()['global']['api_key'])
 
     def reply(self, query, context=None):
         if not context or not context.get('type') or context.get('type') == 'TEXT':

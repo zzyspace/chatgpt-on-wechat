@@ -5,6 +5,7 @@ Message sending channel abstract class
 from bridge.bridge import Bridge
 
 class Channel(object):
+    @classmethod
     def startup(self):
         """
         init channel

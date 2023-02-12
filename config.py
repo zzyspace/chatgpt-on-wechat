@@ -3,9 +3,11 @@
 import json
 import os
 from common.log import logger
+import configparser
 
 config = {}
-
+dynamic_config = configparser.ConfigParser()
+dynamic_config_path = "dynamic-config.conf"
 
 def load_config():
     global config
@@ -18,6 +20,8 @@ def load_config():
     config = json.loads(config_str)
     logger.info("[INIT] load config: {}".format(config))
 
+    if not os.path.exists(dynamic_config_path):
+        raise Exception('配置文件不存在，请根据dynamic-config-template.json模板创建dynamic-config.json文件')
 
 
 def get_root():
@@ -31,3 +35,8 @@ def read_file(path):
 
 def conf():
     return config
+
+
+def dynamic_conf():
+    dynamic_config.read(dynamic_config_path)
+    return dynamic_config
