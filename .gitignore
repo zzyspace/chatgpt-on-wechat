@@ -6,3 +6,4 @@ venv*
 config.json
 dynamic-config.conf
 QR.png
+nohup.out
