@@ -24,10 +24,10 @@ class AccessToken:
                                     headers={"Content-Type":"application/json"})  
 
             if response.status_code == 200:
-                access_token = response.json()["access_token"]
+                access_token = response.json()["accessToken"]
                 with self.lock:
                     self.access_token = access_token
-                logger.info("[Ding] update access_token")
+                logger.info("[Ding] updated access_token")
             else:
                 logger.info("[Ding] Error: Unable to fetch access_token")
             time.sleep(self.interval)

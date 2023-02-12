@@ -10,19 +10,18 @@ import hmac
 import hashlib  
 import base64 
 import io
-import ding_access_token
 from common.log import logger
 from concurrent.futures import ThreadPoolExecutor
 from channel.dingtalk.tornado_utils import Application, route
 from channel.channel import Channel
 from config import conf, dynamic_conf
-from ding_access_token import AccessToken
+from channel.dingtalk.ding_access_token import AccessToken
 
 # thread_pool = ThreadPoolExecutor(max_workers=8)
 
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
-    _access_token = ''
+    _access_token = AccessToken()
     #def __init__(self):
     #    pass
 
@@ -61,7 +60,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
             data=json.dumps({"robotCode":app_key,"userIds":[uid],"msgKey":"sampleImageMsg","msgParam":'{"photoURL":"'+img+'"}'}),
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
-            logger.info(f'[Ding] push_ding response: {resp}')
+            logger.info(f'[Ding] push_img_ding response: {resp}')
         except Exception as e:
             logger.error(e)
 
@@ -76,9 +75,6 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         http_server.listen(8080, "0.0.0.0")
 
         loop.run_forever()
-
-        # 初始化 access token
-        cls._access_token = AccessToken()
 
     def handle(self, msg):
         content = msg['text']['content']
