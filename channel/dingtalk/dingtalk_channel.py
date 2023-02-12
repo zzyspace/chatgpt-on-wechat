@@ -6,6 +6,9 @@ import asyncio
 import tornado
 import json
 import requests
+import hmac  
+import hashlib  
+import base64 
 from common.log import logger
 from concurrent.futures import ThreadPoolExecutor
 from channel.dingtalk.tornado_utils import Application, route
@@ -21,47 +24,37 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
     # Request Handler
 
-    def get(self):
-        return self.write_json({"ret": 200})
-
     def post(self):
+        timestamp = self.request.headers.get('timestamp', None)  
+        sign = self.request.headers.get('sign', None)  
+        app_secret = dynamic_conf()['global']['ding_app_secret']
+        app_secret_enc = app_secret.encode('utf-8')  
+        string_to_sign = '{}\n{}'.format(timestamp, app_secret)  
+        string_to_sign_enc = string_to_sign.encode('utf-8')  
+        hmac_code = hmac.new(app_secret_enc, string_to_sign_enc, digestmod=hashlib.sha256).digest()  
+        my_sign = base64.b64encode(hmac_code).decode('utf-8')  
+        if sign != my_sign:  
+            return self.finish({"errcode":1,"msg":"签名有误"})  
 
-        request_data = self.request.body
-        data = json.loads(request_data)
-        # msg = data['text']['content']
-
-        write = self.handle(data)
-        logger.info(write)
-        return write
+        data = json.loads(self.request.body)
+        self.handle(data)
+        ret = {"errcode":0,"msg":'success'}
+        return self.finish(ret)
+        # return self.write_json(ret)
 
     def write_json(self, struct):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(tornado.escape.json_encode(struct))
 
-    def notify_dingding(self, answer):
-        data = {
-            "msgtype": "markdown",
-            "markdown": {
-                "title": "chatgpt: ",
-                "text": answer
-            },
-
-            "at": {
-                "atMobiles": [
-                    ""
-                ],
-                "isAtAll": False
-            }
-        }
-
+    def push_ding(self, msg, uid):
         
-        notify_url = f"https://oapi.dingtalk.com/robot/send?access_token={dynamic_conf()['global']['dd_token']}"
         try:
-            r = requests.post(notify_url, json=data)
-            reply = r.json()
-            logger.info("dingding: " + str(reply))
+            app_key = dynamic_conf()['global']['ding_app_key']
+            resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
+            data=json.dumps({"robotCode":app_key,"userIds":[uid],"msgKey":"sampleText","msgParam":'{"content":"'+msg+'"}'}),
+            headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":'9ec6668c191c32d490c5b1d5dfab3412'})
+            logger.info(f'[Ding] push_ding response: {resp}')
         except Exception as e:
-            logger.debug(1)
             logger.error(e)
 
     # Channel
@@ -77,16 +70,16 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         loop.run_forever()
 
     def handle(self, msg):
-        logger.debug("[Ding]receive msg:", json.dumps(msg, ensure_ascii=False))
         content = msg['text']['content']
-        from_user_id = '' # TODO
+        nickname = msg['senderNick']
+        from_user_id = msg['senderStaffId']
+        logger.debug(f"[Ding]receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
+
         match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
-        match_payment = True #self.check_payment(msg['User']['NickName']) # TODO
+        match_payment = True #self.check_payment(nickname) # TODO
         logger.debug(f'[Ding] match: {match_prefix is not None}, {match_payment}')
-        logger.debug(content)
         if match_payment and match_prefix is not None:
             if match_prefix != '':
-                logger.debug(1)
                 str_list = content.split(match_prefix, 1)
                 if len(str_list) == 2:
                     content = str_list[1].strip()
@@ -95,36 +88,27 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             if img_match_prefix:
                 # content = content.split(img_match_prefix, 1)[1].strip()
                 # return thread_pool.submit(self._do_send_img, content, from_user_id)
-                print(3)
+                print('')
             else:
                 # return thread_pool.submit(self._do_send, content, from_user_id)
                 return self._do_send(content, from_user_id)
-        
-        return self.write_json({"ret": 400})
 
 
     def send(self, msg, receiver):
         logger.info('[WX] sendMsg={}, receiver={}'.format(msg, receiver))
-        self.notify_dingding(msg)
-        return self.write_json({"ret": 200})
+        self.push_ding(msg)
 
     def _do_send(self, query, reply_user_id):
         try:
             if not query:
-                logger.debug(3)
-                return self.write_json({"ret": 400})
+                return
             context = dict()
             context['from_user_id'] = reply_user_id
             reply_text = super().build_reply_content(query, context)
             if reply_text:
-
-                logger.debug(reply_text)
-                return self.send(conf().get("single_chat_reply_prefix") + reply_text, reply_user_id)
-            return self.write_json({"ret": 400})
+                self.send(conf().get("single_chat_reply_prefix") + reply_text, reply_user_id)
         except Exception as e:
-            logger.debug(2)
             logger.exception(e)
-            return self.write_json({"ret": 400})
     
     def check_prefix(self, content, prefix_list):
         for prefix in prefix_list:
