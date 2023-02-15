@@ -47,7 +47,12 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             # https://open.dingtalk.com/document/isvapp/send-single-chat-messages-in-bulk
             app_key = dynamic_conf()['global']['ding_app_key']
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
-            data=json.dumps({"robotCode":app_key,"userIds":[uid],"msgKey":"sampleText","msgParam":'{"content":"'+msg+'"}'}),
+            data=json.dumps({
+                "robotCode":app_key,
+                "userIds":[uid],
+                "msgKey":"sampleText",
+                "msgParam":json.dumps({"content":msg})
+            }),
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
             logger.info(f'[Ding] push_ding response: {resp.json()}')
         except Exception as e:
@@ -57,7 +62,12 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         try:
             app_key = dynamic_conf()['global']['ding_app_key']
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
-            data=json.dumps({"robotCode":app_key,"userIds":[uid],"msgKey":"sampleImageMsg","msgParam":'{"photoURL":"'+img+'"}'}),
+            data=json.dumps({
+                "robotCode":app_key,
+                "userIds":[uid],
+                "msgKey":"sampleImageMsg",
+                "msgParam":json.dumps({"photoURL": img})
+            }),
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
             logger.info(f'[Ding] push_img_ding response: {resp.json()}')
         except Exception as e:
