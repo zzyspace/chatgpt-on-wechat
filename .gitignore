@@ -5,5 +5,8 @@ venv*
 *.pyc
 config.json
 dynamic-config.conf
+payment_codes
+db.json
+db_backup.json
 QR.png
 nohup.out
