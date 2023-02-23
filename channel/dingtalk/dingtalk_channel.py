@@ -10,6 +10,7 @@ import hmac
 import hashlib  
 import base64 
 import io
+from payment.payment import Payment
 from common.log import logger
 from concurrent.futures import ThreadPoolExecutor
 from channel.dingtalk.tornado_utils import Application, route
@@ -22,6 +23,7 @@ from channel.dingtalk.ding_access_token import AccessToken
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
     _access_token = AccessToken()
+    _payment = Payment()
 
     # Request Handler
 

@@ -1,22 +1,19 @@
-
+import os
 import uuid
 import json
 import threading
 from tinydb import TinyDB, where
-# from common.log import logger
+from common.log import logger
 
 """
 "Users": [{
     "user_id": "xxx",
     "nickname": "Alice",
-    "is_paid": false,
-    "is_used": false,
-    "amount": 0,
-    "payments": ["code1", "code2"]
+    "code": "code"
 }]
 "Codes": [{
     "code": "xxxx",
-    "used": false
+    "amount": 0,
 }]
 """
 
@@ -30,7 +27,7 @@ class Payment(object):
         self.codes = self.db.table('Codes')
         self.loadCodes()
         
-        self.test()
+        # self.test()
 
     def test(self):
         # result = self.codes.search(where('user') != '')
@@ -38,9 +35,9 @@ class Payment(object):
         # state = self.use_code('123', 'ryan', "2")
         # print(f'use code state: {state}')
         is_newbie = self.is_newbie('123')
-        print(f'is_newbie: {is_newbie}')
+        logger.info(f'is_newbie: {is_newbie}')
         has_amount = self.has_amount('123', 'nick')
-        print(f'has_amount: {has_amount}')
+        logger.info(f'has_amount: {has_amount}')
         self.use_amount('123','abc')
 
     """
@@ -64,13 +61,13 @@ class Payment(object):
             with _global_lock:
                 self.users.update({'nickname': nickname}, where('user_id') == user_id)
         else:
-            user = {
-                "user_id": user_id,
-                "nickname": nickname,
-                "amount": 5, # 新用户送5次体验
-            }
-            print(f'create user: {user}')
+            # 新用户送5次体验
+            trial_code = self.gen_serial()
+            trial_code_info = self.new_code(trial_code, 5)
+            user = self.new_user(user_id, nickname, trial_code_info)
+            logger.info(f'create user: {user}')
             with _global_lock:
+                self.codes.insert(trial_code_info)
                 self.users.insert(user)
         return user
 
@@ -80,27 +77,33 @@ class Payment(object):
             
     # 使用额度
     def use_amount(self, user_id, nickname):
-        def function(amount):
-            amount -= 1
+        def function(code_info):
+            amount = code_info['amount'] - 1
             with _global_lock:
-                self.users.update({'amount': amount}, where('user_id') == user_id)
+                self.codes.update({'amount': amount}, where('code') == code_info['code'])
         return self._amount_with_func(user_id, nickname, function)
 
     # 恢复额度 (请求失败等错误处理恢复额度)
     def recover_amount(self, user_id, nickname):
-        def function(amount):
-            amount += 1
+        def function(code_info):
+            amount = code_info['amount'] + 1
             with _global_lock:
-                self.users.update({'amount': amount}, where('user_id') == user_id)
+                self.users.update({'amount': amount}, where('code') == code_info['code'])
         return self._amount_with_func(user_id, nickname, function)
     
     def _amount_with_func(self, user_id, nickname, function=None):
         user = self.search_user(user_id, nickname)
-        amount = user['amount']
-        if amount > 0:
-            if function is not None:
-                function(amount)
-            return True
+        code = user['code']
+        result = self.codes.search(where('code') == code)
+        if result:
+            code_info = result[0]
+            amount = code_info['amount']
+            if amount > 0:
+                if function is not None:
+                    function(code_info)
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -111,7 +114,10 @@ class Payment(object):
     # 从文件中加载 code
     def loadCodes(self):
         content = ''
-        with open('payment_codes', 'r') as file:
+        path = 'payment/payment_codes'
+        if not os.path.exists(path):
+            raise Exception('兑换码文件不存在，请根据 payment_codes_template 模板创建 payment_codes 文件')
+        with open(path, 'r') as file:
             content = file.read()
 
         codes_arr = json.loads(content)
@@ -119,29 +125,55 @@ class Payment(object):
             result = self.codes.search(where('code') == code)
             if len(result) == 0:
                 with _global_lock:
-                    self.codes.insert({
-                        "code": code,
-                        "user": '',
-                        "count": 100
-                    })
+                    code = self.new_code(code, 100)
+                    self.codes.insert(code)
 
     # 使用 code
-    def use_code(self, user_id, nickname, code):
-        result = self.codes.search(where('code') == code)
-        print(f'result: {result}')
-        if result and result[0]['user'] == '':
-            count = result[0]['count']
-            user = self.search_user(user_id, nickname)
+    def bind_code(self, user_id, nickname, code):
+        result = self.users.search(where('code') == code & where('user_id') != user_id)
+        with _global_lock:
+            for user in result:
+                self.users.update({'code': ''}, where('user_id') == user['user_id'])
+            self.users.update({'code': code}, where('user_id') == user_id)
+        logger.info(f'code: {code} used by: [{nickname}]({user_id})')
 
-            with _global_lock:
-                self.codes.update({"user": user_id}, where('code') == code)
-                self.users.update({'amount': user['amount'] + count}, where('user_id') == user_id)
+        return True
 
-            user['amount'] += count
-            print(f'code: {code} used by: {user}')
-            return True
-        else:
-            print(f'[ERROR] use code failed. user_id: {user_id}, nickname: {nickname}, code: {code}')
-            return False
+        # result = self.codes.search(where('code') == code)
+        # print(f'result: {result}')
+        # if result and result[0]['user'] == '':
+        #     count = result[0]['count']
+        #     user = self.search_user(user_id, nickname)
 
-Payment()
+        #     with _global_lock:
+        #         self.codes.update({"user": user_id}, where('code') == code)
+        #         self.users.update({'amount': user['amount'] + count}, where('user_id') == user_id)
+
+        #     user['amount'] += count
+        #     print(f'code: {code} used by: {user}')
+        #     return True
+        # else:
+        #     print(f'[ERROR] use code failed. user_id: {user_id}, nickname: {nickname}, code: {code}')
+        #     return False
+
+    def new_code(self, code, amount):
+        return {
+            "code": code,
+            "amount": amount
+        }
+    
+    def new_user(self, user_id, nickname, code_info):
+        print(code_info)
+        return {
+            "user_id": user_id,
+            "nickname": nickname,
+            "code": code_info['code']
+        }
+
+    def gen_serial(self):
+        return self.code_prefix()+str(uuid.uuid4())
+
+    def code_prefix(self):
+        return 'c4ea-'
+
+# Payment()
