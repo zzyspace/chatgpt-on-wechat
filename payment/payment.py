@@ -46,7 +46,7 @@ class Payment(object):
     """
     # 是否新人 
     def is_newbie(self, user_id):
-        result = self.search_user(where('user_id') == user_id)
+        result = self.search_user(user_id)
         if result:
             return False
         else:
