@@ -44,9 +44,9 @@ class Payment(object):
     """
     Users
     """
-    # 是否新人 (仅查找, 不自动创建不存在的用户)
+    # 是否新人 
     def is_newbie(self, user_id):
-        result = self.users.search(where('user_id') == user_id)
+        result = self.search_user(where('user_id') == user_id)
         if result:
             return False
         else:

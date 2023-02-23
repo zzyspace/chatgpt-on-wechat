@@ -15,10 +15,10 @@ class Reply(object):
         return content in _cmds
 
     def reply_newbie(self):
-        return _config['newbie']
+        return _config['newbie'].replace('\n', '\n')
 
     def reply_help(self):
-        return _config['help']
+        return _config['help'].replace('\n', '\n')
     
     def reply_bound_code(self, user_id, nickname):
         payment = Payment()
