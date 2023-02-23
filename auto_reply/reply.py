@@ -13,7 +13,7 @@ class Reply(object):
     def is_auto_reply(self, content):
         return content in _cmds
 
-    def reply_newbie():
+    def reply_newbie(self):
         return _config['newbie']
     
     def reply_bound_code(self, user_id, nickname):

@@ -47,7 +47,6 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         return self.finish(ret)
 
     def push_ding(self, msg, uid):
-        self._payment.use_amount(uid)
         try:
             # https://open.dingtalk.com/document/isvapp/send-single-chat-messages-in-bulk
             app_key = dynamic_conf()['global']['ding_app_key']
@@ -61,11 +60,9 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
             logger.info(f'[Ding] push_ding response: {resp.json()}')
         except Exception as e:
-            self._payment.recover_amount(uid)
             logger.error(e)
 
     def push_img_ding(self, img, uid):
-        self._payment.use_amount(uid)
         try:
             app_key = dynamic_conf()['global']['ding_app_key']
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
@@ -78,7 +75,6 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
             logger.info(f'[Ding] push_img_ding response: {resp.json()}')
         except Exception as e:
-            self._payment.recover_amount(uid)
             logger.error(e)
 
     # Channel
@@ -94,17 +90,21 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         loop.run_forever()
 
     def handle(self, msg):
+        bot_prefix = conf().get("single_chat_reply_prefix")
         content = msg['text']['content']
         nickname = msg['senderNick']
         from_user_id = msg['senderStaffId']
         logger.info(f"[Ding] receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
 
-        if self._payment.is_newbie:
-            self._do_send(self._reply.reply_newbie, from_user_id)
+        if self._payment.is_newbie(from_user_id):
+            reply = self._reply.reply_newbie()
+            self.send(bot_prefix + reply, from_user_id)
         elif self._reply.is_auto_reply(content):
-            self._do_send(self._reply.reply_with(from_user_id, nickname, content))
-        elif content.startswith(self._payment.code_prefix):
-            self._do_send(self._reply.reply_bound_code(from_user_id, nickname))
+            reply = self._reply.reply_with(from_user_id, nickname, content)
+            self.send(bot_prefix + reply, from_user_id)
+        elif content.startswith(self._payment.code_prefix()):
+            reply = self._reply.reply_bound_code(from_user_id, nickname)
+            self.send(bot_prefix + reply, from_user_id)
         else:
             payment_amount = self._payment.get_amount(from_user_id, nickname)
             match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
@@ -135,6 +135,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             context['from_user_id'] = reply_user_id
             reply_text = super().build_reply_content(query, context)
             if reply_text:
+                self._payment.use_amount(reply_user_id)
                 self.send(conf().get("single_chat_reply_prefix") + reply_text, reply_user_id)
         except Exception as e:
             logger.exception(e)
@@ -151,6 +152,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
             # 图片发送
             logger.info('[Ding] sendImage, receiver={}'.format(reply_user_id))
+            self._payment.use_amount(reply_user_id)
             self.push_img_ding(img_url, reply_user_id)
         except Exception as e:
             logger.exception(e)
