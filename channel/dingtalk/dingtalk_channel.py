@@ -106,6 +106,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             self.send(bot_prefix + reply, from_user_id)
         # 使用兑换码
         elif content.startswith(self._payment.code_prefix()):
+            self._payment.bind_code(from_user_id, nickname, content)
             reply = self._reply.reply_bound_code(from_user_id, nickname)
             self.send(bot_prefix + reply, from_user_id)
         else:
