@@ -109,7 +109,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             payment_amount = self._payment.get_amount(from_user_id, nickname)
             match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
             logger.debug(f'[Ding] match prefix: {match_prefix is not None}, payment amount: {payment_amount}')
-            if payment_amount & match_prefix is not None:
+            if (payment_amount != 0) & (match_prefix is not None):
                 if match_prefix != '':
                     str_list = content.split(match_prefix, 1)
                     if len(str_list) == 2:

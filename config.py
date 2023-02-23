@@ -38,5 +38,5 @@ def conf():
 
 
 def dynamic_conf():
-    dynamic_config.read(dynamic_config_path)
+    dynamic_config.read(dynamic_config_path, encoding='utf-8')
     return dynamic_config
