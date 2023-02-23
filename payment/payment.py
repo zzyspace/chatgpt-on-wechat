@@ -3,7 +3,7 @@ import uuid
 import json
 import threading
 from tinydb import TinyDB, where
-from common.log import logger
+from common.utils import logger
 from payment.gen_code import code_prefix
 
 """

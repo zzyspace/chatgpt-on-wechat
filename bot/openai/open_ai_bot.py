@@ -2,7 +2,7 @@
 
 from bot.bot import Bot
 from config import conf, dynamic_conf
-from common.log import logger
+from common.utils import logger
 import openai
 import time
 

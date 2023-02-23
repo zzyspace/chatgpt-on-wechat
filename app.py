@@ -2,7 +2,7 @@
 
 import config
 from channel import channel_factory
-from common.log import logger
+from common.utils import logger
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ import time
 import requests
 import json
 from config import conf, dynamic_conf
-from common.log import logger
+from common.utils import logger
 
 class AccessToken:
     def __init__(self):

@@ -8,7 +8,7 @@ import json
 from itchat.content import *
 from channel.channel import Channel
 from concurrent.futures import ThreadPoolExecutor
-from common.log import logger
+from common.utils import logger
 from config import conf, dynamic_conf
 import requests
 import io

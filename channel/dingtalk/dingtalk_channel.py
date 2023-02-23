@@ -12,7 +12,7 @@ import base64
 import io
 from auto_reply.reply import Reply
 from payment.payment import Payment
-from common.log import logger
+from common.utils import logger
 from concurrent.futures import ThreadPoolExecutor
 from channel.dingtalk.tornado_utils import Application, route
 from channel.channel import Channel

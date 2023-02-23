@@ -2,7 +2,7 @@
 
 import json
 import os
-from common.log import logger
+from common.utils import logger
 import configparser
 
 config = {}
