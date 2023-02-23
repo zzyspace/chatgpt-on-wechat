@@ -96,24 +96,27 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         from_user_id = msg['senderStaffId']
         logger.info(f"[Ding] receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
 
+        # 新人
         if self._payment.is_newbie(from_user_id):
             reply = self._reply.reply_newbie()
             self.send(bot_prefix + reply, from_user_id)
+        # 自动回复
         elif self._reply.is_auto_reply(content):
             reply = self._reply.reply_with(from_user_id, nickname, content)
             self.send(bot_prefix + reply, from_user_id)
+        # 使用兑换码
         elif content.startswith(self._payment.code_prefix()):
             reply = self._reply.reply_bound_code(from_user_id, nickname)
             self.send(bot_prefix + reply, from_user_id)
         else:
             payment_amount = self._payment.get_amount(from_user_id, nickname)
-            match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
-            logger.debug(f'[Ding] match prefix: {match_prefix is not None}, payment amount: {payment_amount}')
-            if (payment_amount != 0) & (match_prefix is not None):
-                if match_prefix != '':
-                    str_list = content.split(match_prefix, 1)
-                    if len(str_list) == 2:
-                        content = str_list[1].strip()
+            # match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
+            logger.debug(f'[Ding] payment amount: {payment_amount}')
+            if payment_amount:#) & (match_prefix is not None):
+                # if match_prefix != '':
+                #     str_list = content.split(match_prefix, 1)
+                #     if len(str_list) == 2:
+                #         content = str_list[1].strip()
                 
                 img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
                 if img_match_prefix:
@@ -121,6 +124,9 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                     self._do_send_img(content, from_user_id)
                 else:
                     self._do_send(content, from_user_id)
+            else:
+                reply = self._reply.reply_runout()
+                self.send(bot_prefix + reply, from_user_id)
 
 
     def send(self, msg, receiver):
