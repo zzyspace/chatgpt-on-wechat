@@ -5,6 +5,7 @@ from payment.payment import Payment
 _config = dynamic_conf()['auto_reply']
 _cmds = [
     '/info',
+    '/help',
     #'/clear'
 ]
 
@@ -15,6 +16,9 @@ class Reply(object):
 
     def reply_newbie(self):
         return _config['newbie']
+
+    def reply_help(self):
+        return _config['help']
     
     def reply_bound_code(self, user_id, nickname):
         payment = Payment()
@@ -28,5 +32,7 @@ class Reply(object):
             if content == '/info':
                 amount = payment.get_amount(user_id, nickname)
                 return f'剩余额度: {amount}次'
+            elif content == '/help':
+                return self.reply_help()
                 
 
