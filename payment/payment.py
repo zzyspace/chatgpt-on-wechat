@@ -4,6 +4,7 @@ import json
 import threading
 from tinydb import TinyDB, where
 from common.log import logger
+from payment.gen_code import code_prefix
 
 """
 "Users": [{
@@ -22,7 +23,7 @@ _global_lock = threading.Lock()
 class Payment(object):
 
     def __init__(self) -> None:
-        self.db = TinyDB('db.json')
+        self.db = TinyDB('payment/db.json')
         self.users = self.db.table('Users')
         self.codes = self.db.table('Codes')
         self.loadCodes()
@@ -113,14 +114,12 @@ class Payment(object):
     """
     # 从文件中加载 code
     def loadCodes(self):
-        content = ''
         path = 'payment/payment_codes'
         if not os.path.exists(path):
             raise Exception('兑换码文件不存在，请根据 payment_codes_template 模板创建 payment_codes 文件')
-        with open(path, 'r') as file:
-            content = file.read()
+        with open(path, 'r') as f:
+            codes_arr = [line.strip() for line in f.readlines()]
 
-        codes_arr = json.loads(content)
         for code in codes_arr:
             result = self.codes.search(where('code') == code)
             if len(result) == 0:
@@ -174,6 +173,6 @@ class Payment(object):
         return self.code_prefix()+str(uuid.uuid4())
 
     def code_prefix(self):
-        return 'c4ea-'
+        return code_prefix
 
 # Payment()

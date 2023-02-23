@@ -111,7 +111,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
 
     def send(self, msg, receiver):
-        logger.info('[WX] sendMsg={}, receiver={}'.format(msg, receiver))
+        logger.info('[Ding] sendMsg={}, receiver={}'.format(msg, receiver))
         self.push_ding(msg, receiver)
 
     def _do_send(self, query, reply_user_id):
@@ -137,7 +137,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                 return
 
             # 图片发送
-            logger.info('[WX] sendImage, receiver={}'.format(reply_user_id))
+            logger.info('[Ding] sendImage, receiver={}'.format(reply_user_id))
             self.push_img_ding(img_url, reply_user_id)
         except Exception as e:
             logger.exception(e)
