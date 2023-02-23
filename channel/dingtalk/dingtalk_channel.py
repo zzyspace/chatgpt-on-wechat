@@ -10,6 +10,7 @@ import hmac
 import hashlib  
 import base64 
 import io
+from auto_reply.reply import Reply
 from payment.payment import Payment
 from common.log import logger
 from concurrent.futures import ThreadPoolExecutor
@@ -24,6 +25,7 @@ from channel.dingtalk.ding_access_token import AccessToken
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
     _access_token = AccessToken()
     _payment = Payment()
+    _reply = Reply()
 
     # Request Handler
 
@@ -45,6 +47,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         return self.finish(ret)
 
     def push_ding(self, msg, uid):
+        self._payment.use_amount(uid)
         try:
             # https://open.dingtalk.com/document/isvapp/send-single-chat-messages-in-bulk
             app_key = dynamic_conf()['global']['ding_app_key']
@@ -58,9 +61,11 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
             logger.info(f'[Ding] push_ding response: {resp.json()}')
         except Exception as e:
+            self._payment.recover_amount(uid)
             logger.error(e)
 
     def push_img_ding(self, img, uid):
+        self._payment.use_amount(uid)
         try:
             app_key = dynamic_conf()['global']['ding_app_key']
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
@@ -73,6 +78,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             headers={"Content-Type":"application/json","x-acs-dingtalk-access-token":DingtalkChannel._access_token.get_access_token()})
             logger.info(f'[Ding] push_img_ding response: {resp.json()}')
         except Exception as e:
+            self._payment.recover_amount(uid)
             logger.error(e)
 
     # Channel
@@ -93,21 +99,28 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         from_user_id = msg['senderStaffId']
         logger.info(f"[Ding] receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
 
-        match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
-        match_payment = self.check_payment(nickname)
-        logger.debug(f'[Ding] match: {match_prefix is not None}, {match_payment}')
-        if match_payment and match_prefix is not None:
-            if match_prefix != '':
-                str_list = content.split(match_prefix, 1)
-                if len(str_list) == 2:
-                    content = str_list[1].strip()
-            
-            img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
-            if img_match_prefix:
-                content = content.split(img_match_prefix, 1)[1].strip()
-                self._do_send_img(content, from_user_id)
-            else:
-                self._do_send(content, from_user_id)
+        if self._payment.is_newbie:
+            self._do_send(self._reply.reply_newbie, from_user_id)
+        elif self._reply.is_auto_reply(content):
+            self._do_send(self._reply.reply_with(from_user_id, nickname, content))
+        elif content.startswith(self._payment.code_prefix):
+            self._do_send(self._reply.reply_bound_code(from_user_id, nickname))
+        else:
+            payment_amount = self._payment.get_amount(from_user_id, nickname)
+            match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))
+            logger.debug(f'[Ding] match prefix: {match_prefix is not None}, payment amount: {payment_amount}')
+            if payment_amount & match_prefix is not None:
+                if match_prefix != '':
+                    str_list = content.split(match_prefix, 1)
+                    if len(str_list) == 2:
+                        content = str_list[1].strip()
+                
+                img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
+                if img_match_prefix:
+                    content = content.split(img_match_prefix, 1)[1].strip()
+                    self._do_send_img(content, from_user_id)
+                else:
+                    self._do_send(content, from_user_id)
 
 
     def send(self, msg, receiver):

@@ -37,7 +37,7 @@ class Payment(object):
         # print(f'use code state: {state}')
         is_newbie = self.is_newbie('123')
         logger.info(f'is_newbie: {is_newbie}')
-        has_amount = self.has_amount('123', 'nick')
+        has_amount = self.get_amount('123', 'nick')
         logger.info(f'has_amount: {has_amount}')
         self.use_amount('123','abc')
 
@@ -53,14 +53,14 @@ class Payment(object):
             return True
 
     # 查找用户, 不存在则创建并返回
-    def search_user(self, user_id, nickname = 'Unknow'):
+    def search_user(self, user_id, nickname = ''):
         result = self.users.search(where('user_id') == user_id)
         user = {}
         if result:
             user = result[0]
-            user['nickname'] = nickname
+            user['nickname'] = nickname if nickname else user['nickname']
             with _global_lock:
-                self.users.update({'nickname': nickname}, where('user_id') == user_id)
+                self.users.update({'nickname': user['nickname']}, where('user_id') == user_id)
         else:
             # 新用户送5次体验
             trial_code = self.gen_serial()
@@ -73,11 +73,11 @@ class Payment(object):
         return user
 
     # 是否还有额度
-    def has_amount(self, user_id, nickname):
+    def get_amount(self, user_id, nickname = ''):
         return self._amount_with_func(user_id, nickname)
             
     # 使用额度
-    def use_amount(self, user_id, nickname):
+    def use_amount(self, user_id, nickname = ''):
         def function(code_info):
             amount = code_info['amount'] - 1
             with _global_lock:
@@ -85,7 +85,7 @@ class Payment(object):
         return self._amount_with_func(user_id, nickname, function)
 
     # 恢复额度 (请求失败等错误处理恢复额度)
-    def recover_amount(self, user_id, nickname):
+    def recover_amount(self, user_id, nickname = ''):
         def function(code_info):
             amount = code_info['amount'] + 1
             with _global_lock:
@@ -102,11 +102,11 @@ class Payment(object):
             if amount > 0:
                 if function is not None:
                     function(code_info)
-                return True
+                return amount
             else:
-                return False
+                return 0
         else:
-            return False
+            return 0
 
 
     """
@@ -129,31 +129,24 @@ class Payment(object):
 
     # 使用 code
     def bind_code(self, user_id, nickname, code):
-        result = self.users.search(where('code') == code & where('user_id') != user_id)
-        with _global_lock:
-            for user in result:
-                self.users.update({'code': ''}, where('user_id') == user['user_id'])
-            self.users.update({'code': code}, where('user_id') == user_id)
-        logger.info(f'code: {code} used by: [{nickname}]({user_id})')
-
-        return True
-
-        # result = self.codes.search(where('code') == code)
-        # print(f'result: {result}')
-        # if result and result[0]['user'] == '':
-        #     count = result[0]['count']
-        #     user = self.search_user(user_id, nickname)
-
-        #     with _global_lock:
-        #         self.codes.update({"user": user_id}, where('code') == code)
-        #         self.users.update({'amount': user['amount'] + count}, where('user_id') == user_id)
-
-        #     user['amount'] += count
-        #     print(f'code: {code} used by: {user}')
-        #     return True
-        # else:
-        #     print(f'[ERROR] use code failed. user_id: {user_id}, nickname: {nickname}, code: {code}')
-        #     return False
+        code_result = self.codes.search(where('code') == code)
+        if code_result:
+            with _global_lock:
+                user_result = self.users.search(where('code') == code & where('user_id') != user_id)
+                for user in user_result:
+                    # 将此 code 从其他 user 上移除
+                    self.users.update({'code': ''}, where('user_id') == user['user_id'])
+                # 将当前 user 的卡合并
+                if not self.users.search(where('code') == code & where('user_id') == user_id):
+                    # 如果不是绑定的此卡, 将原卡额度合并更新至此卡, 并绑定
+                    remain_amount = self.get_amount(user_id, nickname)
+                    code_amount = code_result[0]['amount']
+                    self.codes.update({'amount': remain_amount + code_amount}, where('code') == code)
+                    self.users.update({'code': code}, where('user_id') == user_id)
+            logger.info(f'code: {code} used by: [{nickname}]({user_id})')
+            return True
+        else:
+            return False
 
     def new_code(self, code, amount):
         return {
