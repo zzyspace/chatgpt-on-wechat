@@ -4,16 +4,16 @@ from tinydb import TinyDB, where
 from tinyrecord import transaction
 
 # 备份数据库文件
-shutil.copy2('db.json', 'db_backup.json')
+shutil.copy2('payment/db.json', 'payment/db_backup.json')
 
 # 加载数据库文件，创建数据库实例
-db = TinyDB('db.json')
+db = TinyDB('payment/db.json')
 users = db.table('Users')
 codes = db.table('Codes')
 
 # 创建事务
-with transaction(codes) as txn:
-    txn.update({'user': '789'}, where('code') == '1')
+with transaction(users) as txn:
+    txn.remove(where('user_id') == 'manager6971')
 
 # 关闭数据库连接
 db.close()
