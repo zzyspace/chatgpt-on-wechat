@@ -6,7 +6,7 @@ _config = dynamic_conf()['auto_reply']
 _cmds = [
     '/info',
     '/help',
-    '/clear'
+    #'/clear'
 ]
 
 class Reply(object):
@@ -15,7 +15,7 @@ class Reply(object):
         return content in _cmds
 
     def reply_newbie(self):
-        return _config['newbie'].replace('\\n', '\n')
+        return _config['newbie'].replace('\\n', '\n') + self.reply_help()
 
     def reply_help(self):
         return _config['help'].replace('\\n', '\n')
