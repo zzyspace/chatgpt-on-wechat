@@ -124,6 +124,8 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                     content = content.split(img_match_prefix, 1)[1].strip()
                     self._do_send_img(content, from_user_id)
                 else:
+                    if (content == '/clear'):
+                        self._payment.recover_amount(from_user_id, nickname)
                     self._do_send(content, from_user_id)
             else:
                 reply = self._reply.reply_runout()

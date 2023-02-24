@@ -6,7 +6,7 @@ _config = dynamic_conf()['auto_reply']
 _cmds = [
     '/info',
     '/help',
-    #'/clear'
+    '/clear'
 ]
 
 class Reply(object):
