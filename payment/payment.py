@@ -45,11 +45,12 @@ class Payment(object):
     Users
     """
     # 是否新人 
-    def is_newbie(self, user_id):
-        result = self.search_user(user_id)
+    def is_newbie(self, user_id, nickname):
+        result = self.users.search(where('user_id') == user_id)
         if result:
             return False
         else:
+            self.create_user(user_id, nickname)
             return True
 
     # 查找用户, 不存在则创建并返回
@@ -62,15 +63,20 @@ class Payment(object):
             with _global_lock:
                 self.users.update({'nickname': user['nickname']}, where('user_id') == user_id)
         else:
-            # 新用户送5次体验
-            trial_code = self.gen_serial()
-            trial_code_info = self.new_code(trial_code, 5)
-            user = self.new_user(user_id, nickname, trial_code_info)
-            logger.info(f'create user: {user}')
-            with _global_lock:
-                self.codes.insert(trial_code_info)
-                self.users.insert(user)
+            user = self.create_user()
         return user
+    
+    def create_user(self, user_id, nickname):
+        # 新用户送5次体验
+        trial_code = self.gen_serial()
+        trial_code_info = self.new_code(trial_code, 5)
+        user = self.new_user(user_id, nickname, trial_code_info)
+        logger.info(f'create user: {user}')
+        with _global_lock:
+            self.codes.insert(trial_code_info)
+            self.users.insert(user)
+        return user
+
 
     # 是否还有额度
     def get_amount(self, user_id, nickname = ''):
@@ -161,7 +167,6 @@ class Payment(object):
         }
     
     def new_user(self, user_id, nickname, code_info):
-        print(code_info)
         return {
             "user_id": user_id,
             "nickname": nickname,

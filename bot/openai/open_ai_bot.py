@@ -19,7 +19,7 @@ class OpenAIBot(Bot):
         if not context or not context.get('type') or context.get('type') == 'TEXT':
             logger.info("[OPEN_AI] query={}".format(query))
             from_user_id = context['from_user_id']
-            if query == '#清除记忆':
+            if query == '/clear':
                 Session.clear_session(from_user_id)
                 return '记忆已清除'
 

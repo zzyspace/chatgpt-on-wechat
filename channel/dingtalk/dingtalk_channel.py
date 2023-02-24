@@ -97,7 +97,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
         logger.info(f"[Ding] receive msg: {json.dumps(msg, ensure_ascii=False)}\nuser: {nickname}\nid: {from_user_id}")
 
         # 新人
-        if self._payment.is_newbie(from_user_id):
+        if self._payment.is_newbie(from_user_id, nickname):
             reply = self._reply.reply_newbie()
             self.send(bot_prefix + reply, from_user_id)
         # 自动回复
