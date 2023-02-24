@@ -95,7 +95,7 @@ class Payment(object):
         def function(code_info):
             amount = code_info['amount'] + 1
             with _global_lock:
-                self.users.update({'amount': amount}, where('code') == code_info['code'])
+                self.codes.update({'amount': amount}, where('code') == code_info['code'])
         return self._amount_with_func(user_id, nickname, function)
     
     def _amount_with_func(self, user_id, nickname, function=None):
