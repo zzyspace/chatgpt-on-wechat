@@ -2,9 +2,10 @@ import os
 import uuid
 import json
 import threading
-from tinydb import TinyDB, where
 from common.utils import logger
 from payment.gen_code import code_prefix
+
+from pymongo import MongoClient
 
 """
 "Users": [{
@@ -23,9 +24,10 @@ _global_lock = threading.Lock()
 class Payment(object):
 
     def __init__(self) -> None:
-        self.db = TinyDB('payment/db.json')
-        self.users = self.db.table('Users')
-        self.codes = self.db.table('Codes')
+        self.client = MongoClient('mongodb://localhost:27017/')
+        self.db = self.client.chatgpt_db
+        self.users = self.db.Users
+        self.codes = self.db.Codes
         self.loadCodes()
         
         # self.test()
@@ -46,8 +48,8 @@ class Payment(object):
     """
     # 是否新人 
     def is_newbie(self, user_id, nickname):
-        result = self.users.search(where('user_id') == user_id)
-        if result:
+        user = self.users.find_one({'user_id': user_id})
+        if user:
             return False
         else:
             self.create_user(user_id, nickname)
@@ -55,13 +57,14 @@ class Payment(object):
 
     # 查找用户, 不存在则创建并返回
     def search_user(self, user_id, nickname = ''):
-        result = self.users.search(where('user_id') == user_id)
-        user = {}
-        if result:
-            user = result[0]
+        user = self.users.find_one({'user_id': user_id})
+        if user:
             user['nickname'] = nickname if nickname else user['nickname']
             with _global_lock:
-                self.users.update({'nickname': user['nickname']}, where('user_id') == user_id)
+                self.users.update_many(
+                    {'user_id': user_id}, 
+                    {'$set': {'nickname': user['nickname']}}
+                )
         else:
             user = self.create_user()
         return user
@@ -69,12 +72,12 @@ class Payment(object):
     def create_user(self, user_id, nickname):
         # 新用户送5次体验
         trial_code = self.gen_serial()
-        trial_code_info = self.new_code(trial_code, 5)
+        trial_code_info = self.new_code_info(trial_code, 5)
         user = self.new_user(user_id, nickname, trial_code_info)
         logger.info(f'create user: {user}')
-        with _global_lock:
-            self.codes.insert(trial_code_info)
-            self.users.insert(user)
+
+        self.codes.insert_one(trial_code_info)
+        self.users.insert_one(user)
         return user
 
 
@@ -86,16 +89,14 @@ class Payment(object):
     def use_amount(self, user_id, nickname = ''):
         def function(code_info):
             amount = code_info['amount'] - 1
-            with _global_lock:
-                self.codes.update({'amount': amount}, where('code') == code_info['code'])
+            self.codes.update_many({'code': code_info['code']}, {'$set': {'amount': amount}})
         return self._amount_with_func(user_id, nickname, function)
 
     # 恢复额度 (请求失败等错误处理恢复额度)
     def recover_amount(self, user_id, nickname = ''):
         def function(code_info):
             amount = code_info['amount'] + 1
-            with _global_lock:
-                self.codes.update({'amount': amount}, where('code') == code_info['code'])
+            self.codes.update_many({'code': code_info['code']}, {'$set': {'amount': amount}})
         return self._amount_with_func(user_id, nickname, function)
     
     def _amount_with_func(self, user_id, nickname, function=None):
@@ -104,9 +105,8 @@ class Payment(object):
         if not code:
             return 0
 
-        result = self.codes.search(where('code') == code)
-        if result:
-            code_info = result[0]
+        code_info = self.codes.find_one({'code': code})
+        if code_info:
             amount = code_info['amount']
             if amount > 0:
                 if function is not None:
@@ -130,16 +130,16 @@ class Payment(object):
             codes_arr = [line.strip() for line in f.readlines()]
 
         for code in codes_arr:
-            result = self.codes.search(where('code') == code)
-            if len(result) == 0:
+            result = self.codes.find_one({'code': code})
+            if result is None:
                 with _global_lock:
-                    code = self.new_code(code, 100)
-                    self.codes.insert(code)
+                    code_info = self.new_code_info(code, 100)
+                    self.codes.insert_one(code_info)
 
     # 使用 code
     def bind_code(self, user_id, nickname, code):
-        code_result = self.codes.search(where('code') == code)
-        if code_result:
+        code_info = self.codes.find_one({'code': code})
+        if code_info:
             """
             注释是因为不同的 channel 会有不同的用户信息, 但是是同一个用户. 所以两个用户信息共用同一 code
             # 将此 code 从其他 user 上移除
@@ -149,24 +149,24 @@ class Payment(object):
                     self.users.update({'code': ''}, where('user_id') == user['user_id'])
             """
             # 将当前 user 的卡合并
-            if not self.users.search((where('code') == code) & (where('user_id') == user_id)):
+            if not self.users.find_one({'code': code, 'user_id': user_id}):
                 # 如果不是绑定的此卡, 将原卡额度合并更新至此卡, 并绑定 (同时删除原卡余额)
                 user = self.search_user(user_id, nickname)
                 old_code = user['code']
                 remain_amount = self.get_amount(user_id, nickname)
-                code_amount = code_result[0]['amount']
-                with _global_lock:
-                    if old_code:
-                        self.codes.update({'amount': 0}, where('code') == old_code)
-                    self.codes.update({'amount': remain_amount + code_amount}, where('code') == code)
-                    self.users.update({'code': code}, where('user_id') == user_id)
+                code_amount = code_info['amount']
+
+                if old_code:
+                    self.codes.update_many({'code': old_code}, {'$set': {'amount': 0}})
+                self.codes.update_many({'code': code}, {'$set': {'amount': remain_amount + code_amount}})
+                self.users.update_many({'user_id': user_id}, {'$set': {'code': code}})
 
             logger.info(f'code: {code} used by: [{nickname}]({user_id})')
             return True
         else:
             return False
 
-    def new_code(self, code, amount):
+    def new_code_info(self, code, amount):
         return {
             "code": code,
             "amount": amount
