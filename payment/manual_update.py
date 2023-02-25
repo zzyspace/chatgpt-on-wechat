@@ -22,12 +22,12 @@ def remove_user(user_id):
 
 # 添加 code 额度
 def add_code_amount(code, add_amount):
+    result = codes.search(where('code') == code)
+    code_info = result[0]
     with transaction(codes) as txn:
-        code_info = codes.search(where('code') == code)
         amount = code_info['amount'] + add_amount
         with _global_lock:
             txn.update({'amount': amount}, where('code') == code_info['code'])
-
 
 
 remove_user('044535556426224740')

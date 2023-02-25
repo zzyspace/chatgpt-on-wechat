@@ -28,13 +28,17 @@ class Reply(object):
         amount = payment.get_amount(user_id, nickname)
         bound_text = _config['bound']
         return f'{bound_text} 剩余额度: {amount}次'
+    def reply_bound_invalid(self, user_id, nickname):
+        return _config['bound_invalid'].replace('\\n', '\n')
 
     def reply_with(self, user_id, nickname, content):
         if self.is_auto_reply(content):
             payment = Payment()
             if content == '/info':
                 amount = payment.get_amount(user_id, nickname)
-                return f'剩余额度: {amount}次'
+                user = payment.search_user(user_id, nickname)
+                code = user['code']
+                return f'ID: {user_id}\n用户名: {nickname}\n剩余额度: {amount}次\n卡号: {code}'
             elif content == '/help':
                 return self.reply_help()
                 

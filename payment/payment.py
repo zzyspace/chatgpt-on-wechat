@@ -140,18 +140,24 @@ class Payment(object):
     def bind_code(self, user_id, nickname, code):
         code_result = self.codes.search(where('code') == code)
         if code_result:
-            
+            """
+            注释是因为不同的 channel 会有不同的用户信息, 但是是同一个用户. 所以两个用户信息共用同一 code
+            # 将此 code 从其他 user 上移除
             user_result = self.users.search((where('code') == code) & (where('user_id') != user_id))
             for user in user_result:
-                # 将此 code 从其他 user 上移除
                 with _global_lock:
                     self.users.update({'code': ''}, where('user_id') == user['user_id'])
+            """
             # 将当前 user 的卡合并
             if not self.users.search((where('code') == code) & (where('user_id') == user_id)):
-                # 如果不是绑定的此卡, 将原卡额度合并更新至此卡, 并绑定
+                # 如果不是绑定的此卡, 将原卡额度合并更新至此卡, 并绑定 (同时删除原卡余额)
+                user = self.search_user(user_id, nickname)
+                old_code = user['code']
                 remain_amount = self.get_amount(user_id, nickname)
                 code_amount = code_result[0]['amount']
                 with _global_lock:
+                    if old_code:
+                        self.codes.update({'amount': 0}, where('code') == old_code)
                     self.codes.update({'amount': remain_amount + code_amount}, where('code') == code)
                     self.users.update({'code': code}, where('user_id') == user_id)
 
