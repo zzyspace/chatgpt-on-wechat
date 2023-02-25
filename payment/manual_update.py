@@ -13,7 +13,7 @@ def remove_user(user_id):
 
 # 添加 code 额度
 def add_code_amount(code, add_amount):
-    code_info = codes.find_one({'codo': code})
+    code_info = codes.find_one({'code': code})
     amount = code_info['amount'] + add_amount
     codes.update_many({'code': code_info['code']}, {'$set': {'amount': amount}})
 
@@ -26,15 +26,15 @@ def insert_user(user_id, nickname, code):
 })
 
 
-remove_user('manager6971')
-insert_user('080567406620809', '光', 'c4ea-be286dc1-1ce0-4f52-b4de-5e66da1e5a4d')
-insert_user('145751385424004372', '庄家庆', 'c4ea-2da0f647-bac4-4d46-ac1a-0a8bf4b7142a')
-insert_user('1558093538679411', '刘洋', 'c4ea-f05ac56f-f11e-4a20-a07c-56a39116bf14')
-insert_user('manager6971', 'Ryan', 'c4ea-2e490c94-6bb0-4f83-b126-46eef986957d')
-add_code_amount('c4ea-be286dc1-1ce0-4f52-b4de-5e66da1e5a4d', 50)
-add_code_amount('c4ea-2da0f647-bac4-4d46-ac1a-0a8bf4b7142a', 50)
-add_code_amount('c4ea-f05ac56f-f11e-4a20-a07c-56a39116bf14', 50)
-add_code_amount('c4ea-2e490c94-6bb0-4f83-b126-46eef986957d', 50)
+# remove_user('manager6971')
+# insert_user('080567406620809', '光', 'c4ea-be286dc1-1ce0-4f52-b4de-5e66da1e5a4d')
+# insert_user('145751385424004372', '庄家庆', 'c4ea-2da0f647-bac4-4d46-ac1a-0a8bf4b7142a')
+# insert_user('1558093538679411', '刘洋', 'c4ea-f05ac56f-f11e-4a20-a07c-56a39116bf14')
+# insert_user('manager6971', 'Ryan', 'c4ea-2e490c94-6bb0-4f83-b126-46eef986957d')
+# add_code_amount('c4ea-be286dc1-1ce0-4f52-b4de-5e66da1e5a4d', 50)
+# add_code_amount('c4ea-2da0f647-bac4-4d46-ac1a-0a8bf4b7142a', 50)
+# add_code_amount('c4ea-f05ac56f-f11e-4a20-a07c-56a39116bf14', 50)
+# add_code_amount('c4ea-2e490c94-6bb0-4f83-b126-46eef986957d', 50)
 
 # txn.insert({
 #     'user_id': '080567406620809',

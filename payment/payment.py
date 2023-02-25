@@ -1,7 +1,6 @@
 import os
 import uuid
 import json
-import threading
 from common.utils import logger
 from payment.gen_code import code_prefix
 
@@ -18,8 +17,6 @@ from pymongo import MongoClient
     "amount": 0,
 }]
 """
-
-_global_lock = threading.Lock()
 
 class Payment(object):
 
@@ -60,11 +57,10 @@ class Payment(object):
         user = self.users.find_one({'user_id': user_id})
         if user:
             user['nickname'] = nickname if nickname else user['nickname']
-            with _global_lock:
-                self.users.update_many(
-                    {'user_id': user_id}, 
-                    {'$set': {'nickname': user['nickname']}}
-                )
+            self.users.update_many(
+                {'user_id': user_id}, 
+                {'$set': {'nickname': user['nickname']}}
+            )
         else:
             user = self.create_user()
         return user
@@ -132,9 +128,8 @@ class Payment(object):
         for code in codes_arr:
             result = self.codes.find_one({'code': code})
             if result is None:
-                with _global_lock:
-                    code_info = self.new_code_info(code, 100)
-                    self.codes.insert_one(code_info)
+                code_info = self.new_code_info(code, 100)
+                self.codes.insert_one(code_info)
 
     # 使用 code
     def bind_code(self, user_id, nickname, code):
@@ -145,7 +140,6 @@ class Payment(object):
             # 将此 code 从其他 user 上移除
             user_result = self.users.search((where('code') == code) & (where('user_id') != user_id))
             for user in user_result:
-                with _global_lock:
                     self.users.update({'code': ''}, where('user_id') == user['user_id'])
             """
             # 将当前 user 的卡合并
