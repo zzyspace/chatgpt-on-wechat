@@ -134,7 +134,7 @@ class Payment(object):
     # 使用 code
     def bind_code(self, user_id, nickname, code):
         code_info = self.codes.find_one({'code': code})
-        if code_info:
+        if code_info and code_info['amount'] != 0:
             """
             注释是因为不同的 channel 会有不同的用户信息, 但是是同一个用户. 所以两个用户信息共用同一 code
             # 将此 code 从其他 user 上移除
