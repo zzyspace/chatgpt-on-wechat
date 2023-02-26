@@ -70,10 +70,11 @@ class Payment(object):
         trial_code = self.gen_serial()
         trial_code_info = self.new_code_info(trial_code, 5)
         user = self.new_user(user_id, nickname, trial_code_info)
-        logger.info(f'create user: {user}')
 
         self.codes.insert_one(trial_code_info)
         self.users.insert_one(user)
+        
+        logger.info(f'[DB] create user: {user}')
         return user
 
 
@@ -83,6 +84,7 @@ class Payment(object):
             
     # 使用额度
     def use_amount(self, user_id, nickname = ''):
+        logger.info(f'[DB] use_amount by {nickname}({user_id})')
         def function(code_info):
             amount = code_info['amount'] - 1
             self.codes.update_many({'code': code_info['code']}, {'$set': {'amount': amount}})
@@ -90,6 +92,7 @@ class Payment(object):
 
     # 恢复额度 (请求失败等错误处理恢复额度)
     def recover_amount(self, user_id, nickname = ''):
+        logger.info(f'[DB] recover_amount by {nickname}({user_id})')
         def function(code_info):
             amount = code_info['amount'] + 1
             self.codes.update_many({'code': code_info['code']}, {'$set': {'amount': amount}})
@@ -155,7 +158,7 @@ class Payment(object):
                 self.codes.update_many({'code': code}, {'$set': {'amount': remain_amount + code_amount}})
                 self.users.update_many({'user_id': user_id}, {'$set': {'code': code}})
 
-            logger.info(f'code: {code} used by: [{nickname}]({user_id})')
+            logger.info(f'[DB] code: {code} used by: [{nickname}]({user_id})')
             return True
         else:
             return False
