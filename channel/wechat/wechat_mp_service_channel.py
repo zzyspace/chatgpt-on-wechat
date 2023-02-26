@@ -1,5 +1,6 @@
 import werobot
 import json
+from werobot.client import Client
 from config import channel_conf
 from common import const
 from common.utils import logger
@@ -101,3 +102,7 @@ class WechatMPServiceChannel(Channel):
                 self.send(reply_text, context['from_user_id'])
         except Exception as e:
             logger.error(e)
+
+    def _fetch_user_info(self, user_id):
+        res = robot.client.get_user_info(user_id)
+        print(res)
