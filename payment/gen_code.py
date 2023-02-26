@@ -1,12 +1,11 @@
 import uuid
-
-code_prefix = 'c4ea-'
+from common import const
 
 # 生成 uuid 字符串的数量
 num_uuids = 200
 
 # 生成 uuid 字符串数组
-uuids = [code_prefix+str(uuid.uuid4()) for _ in range(num_uuids)]
+uuids = [const.PREFIX_CODE+str(uuid.uuid4()) for _ in range(num_uuids)]
 
 # 将 uuid 字符串数组写入文件
 with open('payment_codes', 'w') as f:

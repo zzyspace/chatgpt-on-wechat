@@ -1,8 +1,9 @@
 import os
 import uuid
 import json
+import config
 from common.utils import logger
-from payment.gen_code import code_prefix
+from common import const
 
 from pymongo import MongoClient
 
@@ -73,7 +74,7 @@ class Payment(object):
 
         self.codes.insert_one(trial_code_info)
         self.users.insert_one(user)
-        
+
         logger.info(f'[DB] create user: {user}')
         return user
 
@@ -91,15 +92,17 @@ class Payment(object):
         return self._amount_with_func(user_id, nickname, function)
 
     # 恢复额度 (请求失败等错误处理恢复额度)
-    def recover_amount(self, user_id, nickname = ''):
-        logger.info(f'[DB] recover_amount by {nickname}({user_id})')
+    def recover_amount(self, user_id, nickname = '', count = 1):
+        logger.info(f'[DB] increse_amount by {nickname}({user_id})')
         def function(code_info):
-            amount = code_info['amount'] + 1
+            amount = code_info['amount'] + count
             self.codes.update_many({'code': code_info['code']}, {'$set': {'amount': amount}})
         return self._amount_with_func(user_id, nickname, function)
     
     def _amount_with_func(self, user_id, nickname, function=None):
         user = self.search_user(user_id, nickname)
+        if not user:
+            return 0
         code = user['code']
         if not code:
             return 0
@@ -163,6 +166,20 @@ class Payment(object):
         else:
             return False
 
+    def bind_referral(self, user_id, nickname, referral):
+        ref_user_id = referral.lstrip(const.PREFIX_REF)
+        user = self.search_user(user_id, nickname)
+        if not user['referral']:
+            # 绑定邀请码
+            self.users.update_many({'user_id': user_id}, {'$set': {'referral': referral}})
+            # 邀请人+5次
+            self.recover_amount(ref_user_id, '', 5)
+            return True
+        else:
+            # 已有邀请码, 不能绑定
+            return False
+        
+
     def new_code_info(self, code, amount):
         return {
             "code": code,
@@ -173,13 +190,13 @@ class Payment(object):
         return {
             "user_id": user_id,
             "nickname": nickname,
-            "code": code_info['code']
+            "code": code_info['code'],
+            "channel": config.conf()["channel"]["type"],
+            "referral": ""
         }
 
     def gen_serial(self):
-        return self.code_prefix()+str(uuid.uuid4())
+        return const.PREFIX_CODE+str(uuid.uuid4())
 
-    def code_prefix(self):
-        return code_prefix
 
 # Payment()

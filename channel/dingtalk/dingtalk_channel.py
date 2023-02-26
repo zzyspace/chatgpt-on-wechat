@@ -10,6 +10,7 @@ import hmac
 import hashlib  
 import base64 
 import io
+from common import const
 from auto_reply.reply import Reply
 from payment.payment import Payment
 from common.utils import logger
@@ -105,7 +106,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             reply = self._reply.reply_with(from_user_id, nickname, content)
             self.send(bot_prefix + reply, from_user_id)
         # 使用兑换码
-        elif content.startswith(self._payment.code_prefix()):
+        elif content.startswith(const.PREFIX_CODE):
             bind_success = self._payment.bind_code(from_user_id, nickname, content)
             reply = ''
             if bind_success:
@@ -113,6 +114,15 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             else:
                 reply = self._reply.reply_bound_invalid(from_user_id, nickname)
             self.send(bot_prefix + reply, from_user_id)
+        elif content.startswith(const.PREFIX_REF):
+            bind_success = self._payment.bind_referral(from_user_id, nickname, content)
+            reply = ''
+            if bind_success:
+                reply = self._reply.reply_bound_referral()
+            else:
+                reply = self._reply.reply_bound_referral_invalid()
+            self.send(bot_prefix + reply, from_user_id)
+
         else:
             payment_amount = self._payment.get_amount(from_user_id, nickname)
             # match_prefix = self.check_prefix(content, conf().get('single_chat_prefix'))

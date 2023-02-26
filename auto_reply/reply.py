@@ -1,6 +1,7 @@
 
 from config import dynamic_conf
 from payment.payment import Payment
+from common import const
 
 _config = dynamic_conf()['auto_reply']
 _cmds = [
@@ -28,8 +29,15 @@ class Reply(object):
         amount = payment.get_amount(user_id, nickname)
         bound_text = _config['bound']
         return f'{bound_text} 剩余额度: {amount}次'
+
     def reply_bound_invalid(self, user_id, nickname):
         return _config['bound_invalid'].replace('\\n', '\n')
+
+    def reply_bound_referral(self):
+        return _config['bound']
+
+    def reply_bound_referral_invalid(self):
+        return _config['bound_referral_invalid']
 
     def reply_with(self, user_id, nickname, content):
         if self.is_auto_reply(content):
@@ -38,7 +46,8 @@ class Reply(object):
                 amount = payment.get_amount(user_id, nickname)
                 user = payment.search_user(user_id, nickname)
                 code = user['code']
-                return f'ID: {user_id}\n用户名: {nickname}\n剩余额度: {amount}次\n卡号: {code}'
+                referral = const.PREFIX_REF + user_id
+                return f'ID: {user_id}\n用户名: {nickname}\n邀请码: {referral}\n剩余额度: {amount}次\n卡号: {code}'
             elif content == '/help':
                 return self.reply_help()
                 
