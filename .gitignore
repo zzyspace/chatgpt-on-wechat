@@ -11,3 +11,4 @@ db_backup.json
 QR.png
 nohup.out
 logs/
+werobot_session.sqlite3
