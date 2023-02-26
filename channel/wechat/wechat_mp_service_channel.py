@@ -76,14 +76,12 @@ class WechatMPServiceChannel(Channel):
                 # else:
                 if (content == '/clear'):
                     self._payment.recover_amount(user_id, nickname)
-                self._do_send(content, user_id)
+                thread_pool.submit(self._do_send, content, user_id)
             else:
                 reply = self._reply.reply_runout()
                 self.send(reply, user_id)
 
-
-        thread_pool.submit(self._do_send, msg.content, user_id)
-        return "正在思考中..."
+        # return "正在思考中..."
 
     def send(self, msg, receiver):
         logger.info(f"[WX_MP_SERVICE] reply:\nuser_id: {receiver}\ncontent: {msg}")
