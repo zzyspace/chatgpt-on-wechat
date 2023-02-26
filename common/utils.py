@@ -15,8 +15,8 @@ def _get_logger():
 
     file_handler = RotatingFileHandler(
         os.path.join(_logs_directory, 'records.log'), 
-        maxBytes=1024*1024, 
-        backupCount=10
+        maxBytes=5*1024*1024, 
+        backupCount=100
     )
     file_handler.setFormatter(formatter)
 
