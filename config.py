@@ -36,6 +36,8 @@ def read_file(path):
 def conf():
     return config
 
+def channel_conf(channel_type):
+    return config.get('channel').get(channel_type)
 
 def dynamic_conf():
     dynamic_config.read(dynamic_config_path, encoding='utf-8')

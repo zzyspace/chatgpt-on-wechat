@@ -3,6 +3,7 @@
 import config
 from channel import channel_factory
 from common.utils import logger
+from common import const
 
 
 if __name__ == '__main__':
@@ -11,7 +12,7 @@ if __name__ == '__main__':
         config.load_config()
 
         # create channel
-        channel = channel_factory.create_channel("ding")
+        channel = channel_factory.create_channel(const.WECHAT_MP_SERVICE)
 
         # startup channel
         # channel.startup()
