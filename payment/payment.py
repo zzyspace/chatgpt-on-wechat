@@ -170,13 +170,13 @@ class Payment(object):
         ref_user_id = referral.lstrip(const.PREFIX_REF)
         user = self.search_user(user_id, nickname)
         if not user['referral']:
-            # 绑定邀请码
+            # 绑定推荐码
             self.users.update_many({'user_id': user_id}, {'$set': {'referral': referral}})
-            # 邀请人+5次
+            # 推荐人+5次
             self.recover_amount(ref_user_id, '', 5)
             return True
         else:
-            # 已有邀请码, 不能绑定
+            # 已有推荐码, 不能绑定
             return False
         
 
