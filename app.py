@@ -11,8 +11,13 @@ if __name__ == '__main__':
         # load config
         config.load_config()
 
+        # model_type = config.conf().get("model").get("type")
+        channel_type = config.conf().get("channel").get("type")
+
+        logger.info(f"[INIT] Start up on channel: {channel_type}")
+
         # create channel
-        channel = channel_factory.create_channel(const.WECHAT_MP_SERVICE)
+        channel_factory.create_channel(channel_type)
 
         # startup channel
         # channel.startup()
