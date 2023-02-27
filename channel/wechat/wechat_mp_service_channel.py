@@ -43,6 +43,7 @@ class WechatMPServiceChannel(Channel):
         if self._payment.is_newbie(user_id, nickname):
             reply = self._reply.reply_newbie()
             self.send(reply, user_id)
+            self._fetch_user_info(user_id)
         # 自动回复
         elif self._reply.is_auto_reply(content):
             reply = self._reply.reply_with(user_id, nickname, content)
@@ -104,5 +105,8 @@ class WechatMPServiceChannel(Channel):
             logger.error(e)
 
     def _fetch_user_info(self, user_id):
+        """
+        {'subscribe': 1, 'openid': 'oV2je6v3Iuf-mXT5atczEe2kr40U', 'nickname': '', 'sex': 0, 'language': 'zh_CN', 'city': '', 'province': '', 'country': '', 'headimgurl': '', 'subscribe_time': 1677398414, 'remark': '', 'groupid': 0, 'tagid_list': [], 'subscribe_scene': 'ADD_SCENE_QR_CODE', 'qr_scene': 0, 'qr_scene_str': ''}
+        """
         res = robot.client.get_user_info(user_id)
-        print(res)
+        self._payment.set_nickname(user_id, res['nickname'])

@@ -52,6 +52,12 @@ class Payment(object):
         else:
             self.create_user(user_id, nickname)
             return True
+    
+    # 持久化用户名
+    def set_nickname(self, user_id, nickname):
+        if nickname:
+            user = self.users.update_many({'user_id': user_id}, {'$set': {'nickname': nickname}})
+
 
     # 查找用户, 不存在则创建并返回
     def search_user(self, user_id, nickname = ''):
