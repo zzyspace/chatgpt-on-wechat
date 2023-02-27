@@ -5,11 +5,11 @@ venv*
 *.pyc
 config.json
 dynamic-config.conf
-payment_codes
 db.json
 db_backup.json
 QR.png
 nohup.out
 logs/
-payment_codes/
+payment/payment_codes/codes*
+!codes_template
 werobot_session.sqlite3
