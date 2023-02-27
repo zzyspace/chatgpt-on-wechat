@@ -61,3 +61,5 @@ def insert_user(user_id, nickname, code):
 #     'nickname': 'Ryan',
 #     'code': 'c4ea-2e490c94-6bb0-4f83-b126-46eef986957d'
 # })
+
+client.close()

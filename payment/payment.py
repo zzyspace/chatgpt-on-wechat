@@ -131,18 +131,7 @@ class Payment(object):
     """
     # 从文件中加载 code
     def loadCodes(self):
-        path = 'payment/payment_codes'
-        if not os.path.exists(path):
-            logger.info('兑换码文件不存在，请根据 payment_codes_template 模板创建 payment_codes 文件')
-        else:
-            with open(path, 'r') as f:
-                codes_arr = [line.strip() for line in f.readlines()]
-
-            for code in codes_arr:
-                result = self.codes.find_one({'code': code})
-                if result is None:
-                    code_info = self.new_code_info(code, 100)
-                    self.codes.insert_one(code_info)
+        pass
 
     # 使用 code
     def bind_code(self, user_id, nickname, code):
