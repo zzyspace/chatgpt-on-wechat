@@ -30,7 +30,7 @@ with open(file_path, 'w') as f:
     for uuid_str in uuids:
         f.write(uuid_str + '\n')
 
-if not os.path.exists(path):
+if not os.path.exists(file_path):
     print('兑换码文件不存在，请根据 codes_template 模板创建 codes 文件')
 else:
     with open(file_path, 'r') as f:
