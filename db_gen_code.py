@@ -39,7 +39,7 @@ else:
     for code in codes_arr:
         result = codes.find_one({'code': code})
         if result is None:
-            code_info = Payment.new_code_info(code, amount)
+            code_info = Payment.new_code_info(None, code, amount)
             codes.insert_one(code_info)
             print(code_info)
 
