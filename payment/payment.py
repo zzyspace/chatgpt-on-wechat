@@ -164,8 +164,10 @@ class Payment(object):
 
     def bind_referral(self, user_id, nickname, referral):
         ref_user_id = referral.lstrip(const.PREFIX_REF)
+        ref_user = self.search_user(ref_user_id)
         user = self.search_user(user_id, nickname)
-        if not user['referral']:
+        # 没绑过 referral 且 不是本人的码 且 本渠道的码
+        if not user['referral'] and user_id != ref_user_id and user['channel'] == ref_user['channel']:
             # 绑定推荐码
             self.users.update_many({'user_id': user_id}, {'$set': {'referral': referral}})
             # 推荐人+5次
