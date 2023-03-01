@@ -1,5 +1,6 @@
 import werobot
 import json
+import time
 from werobot.client import Client
 from config import channel_conf
 from common import const
@@ -99,10 +100,11 @@ class WechatMPServiceChannel(Channel):
             reply_text = super().build_reply_content(query, context)
             logger.info(f'[WX_MP_SERVICE] reply: {reply_text}')
             if reply_text:
+                self._payment.use_amount(reply_user_id)
                 reply_arr = self._split_string(reply_text, 600)
                 for reply_chunk in reply_arr:
                     self.send(reply_chunk, context['from_user_id'])
-                self._payment.use_amount(reply_user_id)
+                    time.sleep(0.5)
         except Exception as e:
             logger.error(e)
 
@@ -123,6 +125,8 @@ class WechatMPServiceChannel(Channel):
                 end = s.rfind("。", start, end)
                 if end == -1:
                     end = start + max_length
+                else:
+                    end += 1
             result.append(s[start:end])
-            start = end + 1
+            start = end
         return result
