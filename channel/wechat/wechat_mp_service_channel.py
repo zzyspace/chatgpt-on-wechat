@@ -8,6 +8,7 @@ from common.utils import logger
 from config import conf, dynamic_conf
 from channel.channel import Channel
 from concurrent.futures import ThreadPoolExecutor
+from common.detector import DFADetector
 
 from common import const
 from auto_reply.reply import Reply
@@ -15,6 +16,8 @@ from payment.payment import Payment
 
 robot = werobot.WeRoBot(token=channel_conf(const.WECHAT_MP_SERVICE).get('token'))
 thread_pool = ThreadPoolExecutor(max_workers=8)
+sensitive_detector = DFADetector()
+sensitive_detector.parse('common/keywords')
 
 @robot.text
 def hello_world(msg):
@@ -45,6 +48,10 @@ class WechatMPServiceChannel(Channel):
             reply = self._reply.reply_newbie()
             self.send(reply, user_id)
             # self._fetch_user_info(user_id)
+        # 敏感词
+        elif sensitive_detector.detect(content):
+            reply = self._reply.reply_sensitive()
+            self.send(reply, user_id)
         # 自动回复
         elif self._reply.is_auto_reply(content):
             reply = self._reply.reply_with(user_id, nickname, content)

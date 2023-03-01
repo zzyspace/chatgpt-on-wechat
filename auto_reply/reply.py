@@ -17,6 +17,9 @@ class Reply(object):
     def reply_newbie(self):
         return self._config()['newbie'].replace('\\n', '\n') + self.reply_help()
 
+    def reply_sensitive(self):
+        return self._config()['sensitive'].replace('\\n', '\n')
+
     def reply_help(self):
         return self._config()['help'].replace('\\n', '\n')
 
