@@ -61,7 +61,7 @@ class DFADetector():
                         level = level[char]
                     else:
                         keyword = message[start:start+step_ins]
-                        print(f"[WARNING] 检测到关键词: {keyword}")
+                        logger.info(f"[WARNING] 检测到敏感词: {keyword}")
                         return True
                 else:
                     break

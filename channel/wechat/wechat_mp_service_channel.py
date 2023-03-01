@@ -21,7 +21,6 @@ sensitive_detector.parse('common/keywords')
 
 @robot.text
 def hello_world(msg):
-    logger.info(f'[WX_MP_SERVICE] receive from: {msg.source} msg: {msg.content},')
     return WechatMPServiceChannel().handle(msg)
 
 class WechatMPServiceChannel(Channel):
@@ -41,7 +40,7 @@ class WechatMPServiceChannel(Channel):
         user_id = msg.source
         nickname = ''
         content = msg.content
-        logger.info(f"[WX_MP_SERVICE] receive:\nuser: {nickname}\nid: {user_id}\ncontent: {content}")
+        logger.info(f"[WX_MP_SERVICE]\n[receive]:\nuser: {nickname}\nid: {user_id}\ncontent: {content}")
 
         # 新人
         if self._payment.is_newbie(user_id, nickname):
@@ -94,7 +93,7 @@ class WechatMPServiceChannel(Channel):
         # return "正在思考中..."
 
     def send(self, msg, receiver):
-        logger.info(f"[WX_MP_SERVICE] reply:\nuser_id: {receiver}\ncontent: {msg}")
+        logger.info(f"[WX_MP_SERVICE]\n[reply]:\nuser_id: {receiver}\ncontent: {msg}")
         client = robot.client
         client.send_text_message(receiver, msg)
 
@@ -105,7 +104,7 @@ class WechatMPServiceChannel(Channel):
             context = {}
             context['from_user_id'] = reply_user_id
             reply_text = super().build_reply_content(query, context)
-            logger.info(f'[WX_MP_SERVICE] reply: {reply_text}')
+            # logger.info(f'[WX_MP_SERVICE] reply: {reply_text}')
             if reply_text:
                 self._payment.use_amount(reply_user_id)
                 reply_arr = self._split_string(reply_text, 600)
