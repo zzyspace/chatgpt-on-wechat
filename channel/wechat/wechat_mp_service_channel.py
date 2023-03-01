@@ -99,8 +99,10 @@ class WechatMPServiceChannel(Channel):
             reply_text = super().build_reply_content(query, context)
             logger.info(f'[WX_MP_SERVICE] reply: {reply_text}')
             if reply_text:
+                reply_arr = self._split_string(reply_text, 600)
+                for reply_chunk in reply_arr:
+                    self.send(reply_chunk, context['from_user_id'])
                 self._payment.use_amount(reply_user_id)
-                self.send(reply_text, context['from_user_id'])
         except Exception as e:
             logger.error(e)
 
@@ -110,3 +112,17 @@ class WechatMPServiceChannel(Channel):
         """
         res = robot.client.get_user_info(user_id)
         self._payment.set_nickname(user_id, res['nickname'] if res['nickname'] else '未知')
+
+    def _split_string(self, s, max_length):
+        result = []
+        start = 0
+        while start < len(s):
+            end = start + max_length
+            if end < len(s):
+                # 如果字符串长度超过max_length，则从最后一个空格处分割
+                end = s.rfind("。", start, end)
+                if end == -1:
+                    end = start + max_length
+            result.append(s[start:end])
+            start = end + 1
+        return result
