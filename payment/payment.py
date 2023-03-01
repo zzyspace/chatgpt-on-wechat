@@ -170,8 +170,8 @@ class Payment(object):
         if not user['referral'] and user_id != ref_user_id and user['channel'] == ref_user['channel']:
             # 绑定推荐码
             self.users.update_many({'user_id': user_id}, {'$set': {'referral': referral}})
-            # 推荐人+5次
-            self.recover_amount(ref_user_id, '', 5)
+            # 推荐人+10次
+            self.recover_amount(ref_user_id, '', 10)
             return True
         else:
             # 已有推荐码, 不能绑定
