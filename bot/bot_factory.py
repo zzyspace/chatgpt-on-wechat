@@ -15,9 +15,12 @@ def create_bot(bot_type):
         return BaiduUnitBot()
 
     elif bot_type == 'chatGPT':
-        # ChatGPT 网页端web接口
-        from bot.chatgpt.chat_gpt_bot import ChatGPTBot
-        return ChatGPTBot()
+        # ChatGPT 官方API
+        from bot.chatgpt.chatgpt_model import ChatGPTModel
+        return ChatGPTModel()
+        # # ChatGPT 网页端web接口
+        # from bot.chatgpt.chat_gpt_bot import ChatGPTBot
+        # return ChatGPTBot()
 
     elif bot_type == 'openAI':
         # OpenAI 官方对话模型API
