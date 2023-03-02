@@ -73,9 +73,9 @@ class Payment(object):
         return user
     
     def create_user(self, user_id, nickname):
-        # 新用户送5次体验
+        # 新用户送10次体验
         trial_code = self.gen_serial()
-        trial_code_info = self.new_code_info(trial_code, 5)
+        trial_code_info = self.new_code_info(trial_code, 10)
         user = self.new_user(user_id, nickname, trial_code_info)
 
         self.codes.insert_one(trial_code_info)

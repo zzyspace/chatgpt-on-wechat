@@ -64,14 +64,19 @@ class WechatMPServiceChannel(Channel):
             else:
                 reply = self._reply.reply_bound_invalid(user_id, nickname)
             self.send(reply, user_id)
+        # 使用邀请码
         elif content.startswith(const.PREFIX_REF):
             bind_success = self._payment.bind_referral(user_id, nickname, content)
             reply = ''
             if bind_success:
                 reply = self._reply.reply_bound_referral()
+                self.send(reply, user_id)
+                ref_user_id = content.lstrip(const.PREFIX_REF)
+                ref_reply = self._reply.reply_bound_referral_rewards(ref_user_id, '')
+                self.send(ref_reply, ref_user_id)
             else:
                 reply = self._reply.reply_bound_referral_invalid()
-            self.send(reply, user_id)
+                self.send(reply, user_id)
 
         else:
             payment_amount = self._payment.get_amount(user_id, nickname)

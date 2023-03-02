@@ -41,6 +41,11 @@ class Reply(object):
     def reply_bound_referral_invalid(self):
         return self._config()['bound_referral_invalid']
 
+    def reply_bound_referral_rewards(self, user_id, nickname):
+        payment = Payment()
+        amount = payment.get_amount(user_id, nickname)
+        return f'邀请成功！您获得10次额度。当前剩余额度: {amount}次'
+
     def reply_with(self, user_id, nickname, content):
         if self.is_auto_reply(content):
             payment = Payment()
