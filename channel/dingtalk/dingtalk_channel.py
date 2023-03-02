@@ -99,7 +99,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
         # 新人
         if self._payment.is_newbie(from_user_id, nickname):
-            reply = self._reply.reply_newbie()
+            reply = self._reply.reply_newbie(from_user_id)
             self.send(bot_prefix + reply, from_user_id)
         # 自动回复
         elif self._reply.is_auto_reply(content):

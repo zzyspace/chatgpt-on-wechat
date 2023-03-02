@@ -14,17 +14,17 @@ class Reply(object):
     def is_auto_reply(self, content):
         return content in _cmds
 
-    def reply_newbie(self):
-        return self._config()['newbie'].replace('\\n', '\n') + self.reply_help()
+    def reply_newbie(self, user_id):
+        return self._config()['newbie'].replace('\\n', '\n') + self.reply_help(user_id)
 
     def reply_sensitive(self):
         return self._config()['sensitive'].replace('\\n', '\n')
 
-    def reply_help(self):
-        return self._config()['help'].replace('\\n', '\n')
+    def reply_help(self, user_id):
+        return self._config()['help'].replace('\\n', '\n').format(const.PREFIX_REF + user_id)
 
-    def reply_runout(self):
-        return self._config()['runout'].replace('\\n', '\n')
+    def reply_runout(self, user_id):
+        return self._config()['runout'].replace('\\n', '\n').format(const.PREFIX_REF + user_id)
     
     def reply_bound_code(self, user_id, nickname):
         payment = Payment()
@@ -56,7 +56,7 @@ class Reply(object):
                 referral = const.PREFIX_REF + user_id
                 return f'ID: {user_id}\n用户名: {nickname}\n推荐码: {referral}\n\n:剩余额度: {amount}次\n卡号: {code}'
             elif content == '/help':
-                return self.reply_help()
+                return self.reply_help(user_id)
 
     def _config(self):
         return dynamic_conf()['auto_reply']

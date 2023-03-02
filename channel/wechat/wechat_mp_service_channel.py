@@ -44,7 +44,7 @@ class WechatMPServiceChannel(Channel):
 
         # 新人
         if self._payment.is_newbie(user_id, nickname):
-            reply = self._reply.reply_newbie()
+            reply = self._reply.reply_newbie(user_id)
             self.send(reply, user_id)
             # self._fetch_user_info(user_id)
         # 敏感词
