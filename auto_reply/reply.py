@@ -54,7 +54,7 @@ class Reply(object):
                 user = payment.search_user(user_id, nickname)
                 code = user['code']
                 referral = const.PREFIX_REF + user_id
-                return f'ID: {user_id}\n用户名: {nickname}\n推荐码: {referral}\n\n:剩余额度: {amount}次\n卡号: {code}'
+                return f'【剩余额度】\n{amount}次\n\n【卡号】\n{code}\n\n【推荐码】\n{referral}'
             elif content == '/help':
                 return self.reply_help(user_id)
 
