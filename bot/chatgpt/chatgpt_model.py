@@ -3,7 +3,7 @@
 from bot.bot import Bot
 from config import conf, dynamic_conf
 from common import const
-from common import log
+from common.utils import logger
 import openai
 import time
 
@@ -18,21 +18,21 @@ class ChatGPTModel(Bot):
     def reply(self, query, context=None):
         # acquire reply content
         if not context or not context.get('type') or context.get('type') == 'TEXT':
-            log.info("[OPEN_AI] query={}".format(query))
+            logger.info("[OPEN_AI] query={}".format(query))
             from_user_id = context['from_user_id']
             if query == '/clear':
                 Session.clear_session(from_user_id)
                 return '记忆已清除'
 
             new_query = Session.build_session_query(query, from_user_id)
-            log.debug("[OPEN_AI] session query={}".format(new_query))
+            logger.debug("[OPEN_AI] session query={}".format(new_query))
 
             # if context.get('stream'):
             #     # reply in stream
             #     return self.reply_text_stream(query, new_query, from_user_id)
 
             reply_content = self.reply_text(new_query, from_user_id, 0)
-            log.debug("[OPEN_AI] new_query={}, user={}, reply_cont={}".format(new_query, from_user_id, reply_content))
+            logger.debug("[OPEN_AI] new_query={}, user={}, reply_cont={}".format(new_query, from_user_id, reply_content))
             if reply_content:
                 Session.save_session(query, reply_content, from_user_id)
             return reply_content
@@ -53,21 +53,21 @@ class ChatGPTModel(Bot):
             )
             # res_content = response.choices[0]['text'].strip().replace('<|endoftext|>', '')
             res_content = response.choices[0]['message']['content']
-            log.info(f'[ChatGPT] reply={res_content}')
-            # log.info("[OPEN_AI] reply={}".format(res_content))
+            logger.info(f'[ChatGPT] reply={res_content}')
+            # logger.info("[OPEN_AI] reply={}".format(res_content))
             return res_content
         except openai.error.RateLimitError as e:
             # rate limit exception
-            log.warn(e)
+            logger.warn(e)
             if retry_count < 1:
                 time.sleep(5)
-                log.warn("[ChatGPT] RateLimit exceed, 第{}次重试".format(retry_count+1))
+                logger.warn("[ChatGPT] RateLimit exceed, 第{}次重试".format(retry_count+1))
                 return self.reply_text(query, user_id, retry_count+1)
             else:
                 return "提问太快啦，请休息一下再问我吧"
         except Exception as e:
             # unknown exception
-            log.exception(e)
+            logger.exception(e)
             Session.clear_session(user_id)
             return "请再问我一次吧"
 
@@ -89,16 +89,16 @@ class ChatGPTModel(Bot):
 
         except openai.error.RateLimitError as e:
             # rate limit exception
-            log.warn(e)
+            logger.warn(e)
             if retry_count < 1:
                 time.sleep(5)
-                log.warn("[OPEN_AI] RateLimit exceed, 第{}次重试".format(retry_count+1))
+                logger.warn("[OPEN_AI] RateLimit exceed, 第{}次重试".format(retry_count+1))
                 return self.reply_text(query, user_id, retry_count+1)
             else:
                 return "提问太快啦，请休息一下再问我吧"
         except Exception as e:
             # unknown exception
-            log.exception(e)
+            logger.exception(e)
             Session.clear_session(user_id)
             return "请再问我一次吧"
 
@@ -127,25 +127,25 @@ class ChatGPTModel(Bot):
 
     def create_img(self, query, retry_count=0):
         try:
-            log.info("[OPEN_AI] image_query={}".format(query))
+            logger.info("[OPEN_AI] image_query={}".format(query))
             response = openai.Image.create(
                 prompt=query,    #图片描述
                 n=1,             #每次生成图片的数量
                 size="256x256"   #图片大小,可选有 256x256, 512x512, 1024x1024
             )
             image_url = response['data'][0]['url']
-            log.info("[OPEN_AI] image_url={}".format(image_url))
+            logger.info("[OPEN_AI] image_url={}".format(image_url))
             return image_url
         except openai.error.RateLimitError as e:
-            log.warn(e)
+            logger.warn(e)
             if retry_count < 1:
                 time.sleep(5)
-                log.warn("[OPEN_AI] ImgCreate RateLimit exceed, 第{}次重试".format(retry_count+1))
+                logger.warn("[OPEN_AI] ImgCreate RateLimit exceed, 第{}次重试".format(retry_count+1))
                 return self.reply_text(query, retry_count+1)
             else:
                 return "提问太快啦，请休息一下再问我吧"
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             return None
 
 
