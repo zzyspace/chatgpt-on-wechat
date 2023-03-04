@@ -102,8 +102,8 @@ def click_handler(msg):
 
 @robot.subscribe
 def subscribe(msg):
-    if msg.source != 'oZbIF5ywldp5XTvmXsUFiZNJguXM':
-        return
+    # if msg.source != 'oZbIF5ywldp5XTvmXsUFiZNJguXM':
+    #     return
     media_id = 'u7BHUf6G1r0Y2MxM-bWne3cNehAh-N4yDO8whm_6NkLLjz_PBJFCijEA4nSN4BTx'
     robot.client.send_image_message(msg.source, media_id)
 

@@ -56,7 +56,7 @@ class Reply(object):
         return f'邀请成功！您获得10次额度。当前剩余额度: {amount}次'
 
     def reply_about_us(self):
-        return self._config()['about_us']
+        return self._config()['about_us'].replace('\\n', '\n')
 
     def reply_with(self, user_id, nickname, content):
         if self.is_auto_reply(content):
