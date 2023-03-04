@@ -20,7 +20,7 @@ robot = werobot.WeRoBot(token=channel_conf(const.WECHAT_MP_SERVICE).get('token')
 thread_pool = ThreadPoolExecutor(max_workers=8)
 sensitive_detector = DFADetector()
 sensitive_detector.parse('common/keywords')
-
+"""
 robot.client.create_menu({
     'button': [
         {
@@ -111,10 +111,6 @@ def about_cooperation(msg):
     msg['content'] = '/about_us'
     WechatMPServiceChannel().handle(msg)
 
-@robot.text
-def hello_world(msg):
-    return WechatMPServiceChannel().handle(msg)
-
 @robot.image
 def receive_img(msg):
     if msg.source == 'oZbIF5226smPC9DoELmwYZunqtLU':
@@ -124,14 +120,16 @@ def receive_img(msg):
         result = robot.client.upload_permanent_media('image', file_object)
         return json.dumps(json['media_id'])
 
-
 @robot.subscribe
 def subscribe(msg):
     if msg.source != 'oZbIF5226smPC9DoELmwYZunqtLU':
         return
     media_id = ''
     robot.client.send_image_message(msg.source, media_id)
-
+"""
+@robot.text
+def hello_world(msg):
+    return WechatMPServiceChannel().handle(msg)
 
 class WechatMPServiceChannel(Channel):
     _payment = Payment()
