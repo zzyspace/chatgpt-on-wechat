@@ -78,22 +78,27 @@ robot.client.create_menu({
 """
 @robot.click
 def click_handler(msg):
+    content = ''
     if msg.key == 'amount_query':
-        msg['content'] = '/info'
+        content = '/info'
     elif msg.key == 'amount_free':
-        msg['content'] = '/amount_free'
+        content = '/amount_free'
     elif msg.key == 'amount_buy':
-        msg['content'] = '/amount_buy'
+        content = '/amount_buy'
     elif msg.key == 'func_clear':
-        msg['content'] = '/clear'
+        content = '/clear'
     elif msg.key == 'func_help':
-        msg['content'] = '/help'
+        content = '/help'
     elif msg.key == 'about_us':
-        msg['content'] = '/about_us'
+        content = '/about_us'
     elif msg.key == 'about_cooperation':
-        msg['content'] = '/about_us'
-        
-    WechatMPServiceChannel().handle(msg)
+        content = '/about_us'
+
+
+    WechatMPServiceChannel().handle({
+        'content': content,
+        'source': msg.source
+    })
 
 @robot.subscribe
 def subscribe(msg):
@@ -117,7 +122,10 @@ def hello_world(msg):
         token = robot.client.get_access_token()
         robot.client.send_text_message(msg.source, token)
     else:
-        return WechatMPServiceChannel().handle(msg)
+        return WechatMPServiceChannel().handle({
+            'content': msg.content,
+            'source': msg.source
+        })
 
 class WechatMPServiceChannel(Channel):
     _payment = Payment()
@@ -133,9 +141,9 @@ class WechatMPServiceChannel(Channel):
         robot.run()
         
     def handle(self, msg, count=0):
-        user_id = msg.source
+        user_id = msg['source']
         nickname = ''
-        content = msg.content
+        content = msg['content']
         logger.info(f"[WX_MP_SERVICE]\n[receive]:\nuser: {nickname}\nid: {user_id}\ncontent: {content}")
 
         # 新人
