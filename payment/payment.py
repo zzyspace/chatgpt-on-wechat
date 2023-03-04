@@ -116,12 +116,9 @@ class Payment(object):
         code_info = self.codes.find_one({'code': code})
         if code_info:
             amount = code_info['amount']
-            if amount > 0:
-                if function is not None:
-                    function(code_info)
-                return amount
-            else:
-                return 0
+            if function is not None:
+                function(code_info)
+            return amount
         else:
             return 0
 
