@@ -111,6 +111,15 @@ def about_cooperation(msg):
     msg['content'] = '/about_us'
     WechatMPServiceChannel().handle(msg)
 
+@robot.subscribe
+def subscribe(msg):
+    if msg.source != 'oZbIF5226smPC9DoELmwYZunqtLU':
+        return
+    media_id = ''
+    robot.client.send_image_message(msg.source, media_id)
+"""
+
+
 @robot.image
 def receive_img(msg):
     if msg.source == 'oZbIF5226smPC9DoELmwYZunqtLU':
@@ -119,17 +128,14 @@ def receive_img(msg):
         file_object = BytesIO(res.content)
         result = robot.client.upload_permanent_media('image', file_object)
         return json.dumps(json['media_id'])
-
-@robot.subscribe
-def subscribe(msg):
-    if msg.source != 'oZbIF5226smPC9DoELmwYZunqtLU':
-        return
-    media_id = ''
-    robot.client.send_image_message(msg.source, media_id)
-"""
+        
 @robot.text
 def hello_world(msg):
-    return WechatMPServiceChannel().handle(msg)
+    if msg.source == 'oZbIF5226smPC9DoELmwYZunqtLU' and msg.content == 'token':
+        token = robot.client.get_access_token()
+        robot.client.send_text_message(msg.source, token)
+    else:
+        return WechatMPServiceChannel().handle(msg)
 
 class WechatMPServiceChannel(Channel):
     _payment = Payment()
