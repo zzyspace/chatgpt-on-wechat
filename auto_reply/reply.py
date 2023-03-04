@@ -6,6 +6,9 @@ from common import const
 _cmds = [
     '/info',
     '/help',
+    '/amount_free',
+    '/amount_buy',
+    '/about_us'
     #'/clear'
 ]
 
@@ -25,6 +28,12 @@ class Reply(object):
 
     def reply_runout(self, user_id):
         return self._config()['runout'].replace('\\n', '\n').format(const.PREFIX_REF + user_id)
+
+    def reply_amount_buy(self):
+        return self._config()['amount_buy'].replace('\\n', '\n')
+
+    def reply_amount_free(self, user_id):
+        return self._config()['amount_free'].replace('\\n', '\n').format(const.PREFIX_REF + user_id)
     
     def reply_bound_code(self, user_id, nickname):
         payment = Payment()
@@ -46,6 +55,9 @@ class Reply(object):
         amount = payment.get_amount(user_id, nickname)
         return f'邀请成功！您获得10次额度。当前剩余额度: {amount}次'
 
+    def reply_about_us(self):
+        return self._config()['about_us']
+
     def reply_with(self, user_id, nickname, content):
         if self.is_auto_reply(content):
             payment = Payment()
@@ -57,6 +69,12 @@ class Reply(object):
                 return f'【剩余额度】\n{amount}次\n\n【卡号】\n{code}\n\n【推荐码】\n{referral}'
             elif content == '/help':
                 return self.reply_help(user_id)
+            elif content == '/amount_free':
+                return self.reply_amount_free(user_id)
+            elif content == '/amount_buy':
+                return self.reply_amount_buy()
+            elif content == '/about_us':
+                return self.reply_about_us()
 
     def _config(self):
         return dynamic_conf()['auto_reply']

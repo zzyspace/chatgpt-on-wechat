@@ -1,7 +1,9 @@
 import werobot
 import json
 import time
+import requests
 from werobot.client import Client
+from io import BytesIO
 from config import channel_conf
 from common import const
 from common.utils import logger
@@ -19,9 +21,117 @@ thread_pool = ThreadPoolExecutor(max_workers=8)
 sensitive_detector = DFADetector()
 sensitive_detector.parse('common/keywords')
 
+robot.client.create_menu({
+    'button': [
+        {
+            'name': '我要额度',
+            'sub_button': [
+                {
+                    'type': 'click',
+                    'name': '我的额度',
+                    'key': 'amount_query'
+                },
+                {
+                    'type': 'click',
+                    'name': '获取免费额度',
+                    'key': 'amount_free'
+                },
+                {
+                    'type': 'click',
+                    'name': '兑换码购买',
+                    'key': 'amount_buy'
+                }
+            ]
+        },
+        {
+            'name': '功能',
+            'sub_button': [
+                {
+                    'type': 'click',
+                    'name': '清除上下文记忆',
+                    'key': 'func_clear'
+                },
+                {
+                    'type': 'click',
+                    'name': '帮助',
+                    'key': 'func_help'
+                }
+            ]
+        },
+        {
+            'name': '关于我们',
+            'sub_button': [
+                {
+                    'type': 'click',
+                    'name': '联系我们',
+                    'key': 'about_us'
+                },
+                {
+                    'type': 'click',
+                    'name': '商务合作',
+                    'key': 'about_cooperation'
+                }
+            ]
+        }
+    ]
+})
+
+@robot.key_click('amount_query')
+def amount_query(msg):
+    msg['content'] = '/info'
+    WechatMPServiceChannel().handle(msg)
+
+@robot.key_click('amount_free')
+def amount_free(msg):
+    msg['content'] = '/amount_free'
+    WechatMPServiceChannel().handle(msg)
+
+@robot.key_click('amount_buy')
+def amount_buy(msg):
+    msg['content'] = '/amount_buy'
+    WechatMPServiceChannel().handle(msg)
+
+@robot.key_click('func_clear')
+def func_clear(msg):
+    msg['content'] = '/clear'
+    WechatMPServiceChannel().handle(msg)
+
+@robot.key_click('func_help')
+def func_help(msg):
+    msg['content'] = '/help'
+    WechatMPServiceChannel().handle(msg)
+
+@robot.key_click('about_us')
+def about_us(msg):
+    msg['content'] = '/about_us'
+    WechatMPServiceChannel().handle(msg)
+
+@robot.key_click('about_cooperation')
+def about_cooperation(msg):
+    msg['content'] = '/about_us'
+    WechatMPServiceChannel().handle(msg)
+
 @robot.text
 def hello_world(msg):
     return WechatMPServiceChannel().handle(msg)
+
+@robot.image
+def receive_img(msg):
+    if msg.source == 'oZbIF5226smPC9DoELmwYZunqtLU':
+        img_url = msg.img
+        res = requests.get(img_url)
+        file_object = BytesIO(res.content)
+        result = robot.client.upload_permanent_media('image', file_object)
+        return json.dumps(json['media_id'])
+
+
+@robot.subscribe
+def subscribe(msg):
+    if msg.source != 'oZbIF5226smPC9DoELmwYZunqtLU':
+        return
+    media_id = ''
+    robot.client.send_image_message(msg.source, media_id)
+
 
 class WechatMPServiceChannel(Channel):
     _payment = Payment()
@@ -44,11 +154,12 @@ class WechatMPServiceChannel(Channel):
 
         # 新人
         if self._payment.is_newbie(user_id, nickname):
-            reply = self._reply.reply_newbie(user_id)
-            self.send(reply, user_id)
+            pass
+            # reply = self._reply.reply_newbie(user_id)
+            # self.send(reply, user_id)
             # self._fetch_user_info(user_id)
         # 敏感词
-        elif sensitive_detector.detect(content):
+        if sensitive_detector.detect(content):
             reply = self._reply.reply_sensitive()
             self.send(reply, user_id)
         # 自动回复
@@ -64,7 +175,7 @@ class WechatMPServiceChannel(Channel):
             else:
                 reply = self._reply.reply_bound_invalid(user_id, nickname)
             self.send(reply, user_id)
-        # 使用邀请码
+        # 使用推荐码
         elif content.startswith(const.PREFIX_REF):
             bind_success = self._payment.bind_referral(user_id, nickname, content)
             reply = ''
