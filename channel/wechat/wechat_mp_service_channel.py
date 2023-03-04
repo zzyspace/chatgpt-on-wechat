@@ -203,7 +203,7 @@ class WechatMPServiceChannel(Channel):
                     self._payment.recover_amount(user_id, nickname)
                 thread_pool.submit(self._do_send, content, user_id)
             else:
-                reply = self._reply.reply_runout()
+                reply = self._reply.reply_runout(user_id)
                 self.send(reply, user_id)
 
         # return "正在思考中..."
