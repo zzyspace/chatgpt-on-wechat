@@ -76,39 +76,23 @@ robot.client.create_menu({
     ]
 })
 """
-@robot.key_click('amount_query')
-def amount_query(msg):
-    msg['content'] = '/info'
-    WechatMPServiceChannel().handle(msg)
-
-@robot.key_click('amount_free')
-def amount_free(msg):
-    msg['content'] = '/amount_free'
-    WechatMPServiceChannel().handle(msg)
-
-@robot.key_click('amount_buy')
-def amount_buy(msg):
-    msg['content'] = '/amount_buy'
-    WechatMPServiceChannel().handle(msg)
-
-@robot.key_click('func_clear')
-def func_clear(msg):
-    msg['content'] = '/clear'
-    WechatMPServiceChannel().handle(msg)
-
-@robot.key_click('func_help')
-def func_help(msg):
-    msg['content'] = '/help'
-    WechatMPServiceChannel().handle(msg)
-
-@robot.key_click('about_us')
-def about_us(msg):
-    msg['content'] = '/about_us'
-    WechatMPServiceChannel().handle(msg)
-
-@robot.key_click('about_cooperation')
-def about_cooperation(msg):
-    msg['content'] = '/about_us'
+@robot.click
+def click_handler(msg):
+    if msg.key == 'amount_query':
+        msg['content'] = '/info'
+    elif msg.key == 'amount_free':
+        msg['content'] = '/amount_free'
+    elif msg.key == 'amount_buy':
+        msg['content'] = '/amount_buy'
+    elif msg.key == 'func_clear':
+        msg['content'] = '/clear'
+    elif msg.key == 'func_help':
+        msg['content'] = '/help'
+    elif msg.key == 'about_us':
+        msg['content'] = '/about_us'
+    elif msg.key == 'about_cooperation':
+        msg['content'] = '/about_us'
+        
     WechatMPServiceChannel().handle(msg)
 
 @robot.subscribe
