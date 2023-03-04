@@ -75,7 +75,7 @@ robot.client.create_menu({
         }
     ]
 })
-
+"""
 @robot.key_click('amount_query')
 def amount_query(msg):
     msg['content'] = '/info'
@@ -113,12 +113,10 @@ def about_cooperation(msg):
 
 @robot.subscribe
 def subscribe(msg):
-    if msg.source != 'oZbIF5226smPC9DoELmwYZunqtLU':
+    if msg.source != 'oZbIF5ywldp5XTvmXsUFiZNJguXM':
         return
-    media_id = ''
+    media_id = 'u7BHUf6G1r0Y2MxM-bWne3cNehAh-N4yDO8whm_6NkLLjz_PBJFCijEA4nSN4BTx'
     robot.client.send_image_message(msg.source, media_id)
-"""
-
 
 @robot.image
 def receive_img(msg):
@@ -128,7 +126,7 @@ def receive_img(msg):
         file_object = BytesIO(res.content)
         result = robot.client.upload_permanent_media('image', file_object)
         return json.dumps(json['media_id'])
-        
+
 @robot.text
 def hello_world(msg):
     if msg.source == 'oZbIF5226smPC9DoELmwYZunqtLU' and msg.content == 'token':
