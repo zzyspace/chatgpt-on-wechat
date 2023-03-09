@@ -23,7 +23,7 @@ from common.detector import DFADetector
 
 sensitive_detector = DFADetector()
 sensitive_detector.parse('common/keywords')
-# thread_pool = ThreadPoolExecutor(max_workers=8)
+thread_pool = ThreadPoolExecutor(max_workers=8)
 
 @route("/")
 class DingtalkChannel(tornado.web.RequestHandler, Channel):
@@ -148,11 +148,11 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                 img_match_prefix = self.check_prefix(content, conf().get('image_create_prefix'))
                 if img_match_prefix:
                     content = content.split(img_match_prefix, 1)[1].strip()
-                    self._do_send_img(content, from_user_id)
+                    thread_pool.submit(self._do_send_img, content, from_user_id)
                 else:
                     if (content == '/clear'):
                         self._payment.recover_amount(from_user_id, nickname)
-                    self._do_send(content, from_user_id)
+                    thread_pool.submit(self._do_send, content, from_user_id)
             else:
                 reply = self._reply.reply_runout(from_user_id)
                 self.send(bot_prefix + reply, from_user_id)
