@@ -19,7 +19,10 @@ from channel.dingtalk.tornado_utils import Application, route
 from channel.channel import Channel
 from config import conf, dynamic_conf, channel_conf
 from channel.dingtalk.ding_access_token import AccessToken
+from common.detector import DFADetector
 
+sensitive_detector = DFADetector()
+sensitive_detector.parse('common/keywords')
 # thread_pool = ThreadPoolExecutor(max_workers=8)
 
 @route("/")
@@ -99,10 +102,15 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
         # 新人
         if self._payment.is_newbie(from_user_id, nickname):
+            logger.info(f'[Ding] new user: {from_user_id}')
             reply = self._reply.reply_newbie(from_user_id)
             self.send(bot_prefix + reply, from_user_id)
+        # 敏感词
+        if sensitive_detector.detect(content):
+            reply = self._reply.reply_sensitive()
+            self.send(reply, from_user_id)
         # 自动回复
-        elif self._reply.is_auto_reply(content):
+        if self._reply.is_auto_reply(content):
             reply = self._reply.reply_with(from_user_id, nickname, content)
             self.send(bot_prefix + reply, from_user_id)
         # 使用兑换码
@@ -119,9 +127,13 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
             reply = ''
             if bind_success:
                 reply = self._reply.reply_bound_referral()
+                self.send(bot_prefix + reply, from_user_id)
+                ref_user_id = content.lstrip(const.PREFIX_REF)
+                ref_reply = self._reply.reply_bound_referral_rewards(ref_user_id, '')
+                self.send(bot_prefix + ref_reply, ref_user_id)
             else:
                 reply = self._reply.reply_bound_referral_invalid()
-            self.send(bot_prefix + reply, from_user_id)
+                self.send(bot_prefix + reply, from_user_id)
 
         else:
             payment_amount = self._payment.get_amount(from_user_id, nickname)
@@ -142,7 +154,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
                         self._payment.recover_amount(from_user_id, nickname)
                     self._do_send(content, from_user_id)
             else:
-                reply = self._reply.reply_runout()
+                reply = self._reply.reply_runout(from_user_id)
                 self.send(bot_prefix + reply, from_user_id)
 
 
