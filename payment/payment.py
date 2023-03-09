@@ -141,10 +141,17 @@ class Payment(object):
             for user in user_result:
                     self.users.update({'code': ''}, where('user_id') == user['user_id'])
             """
+            user = self.search_user(user_id, nickname)
+            current_channel = user['channel']
+
+            # 当前 channel 已有其他 user 绑定了这个 code
+            if self.users.find({'code': code, 'channel': current_channel}):
+                logger.info(f'[DB] code: {code} used failed by: [{nickname}]({user_id}), channel: {current_channel}, reason: already used')
+                return False
+
             # 将当前 user 的卡合并
             if not self.users.find_one({'code': code, 'user_id': user_id}):
                 # 如果不是绑定的此卡, 将原卡额度合并更新至此卡, 并绑定 (同时删除原卡余额)
-                user = self.search_user(user_id, nickname)
                 old_code = user['code']
                 remain_amount = self.get_amount(user_id, nickname)
                 code_amount = code_info['amount']
