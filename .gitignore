@@ -3,13 +3,13 @@
 __pycache__/
 venv*
 *.pyc
-config.json
-dynamic-config.conf
 db.json
 db_backup.json
 QR.png
 nohup.out
-logs/
-payment/payment_codes/codes*
 !codes_template
 werobot_session.sqlite3
+logs/
+config.json
+dynamic-config.conf
+payment/payment_codes/codes*

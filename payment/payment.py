@@ -145,7 +145,7 @@ class Payment(object):
             current_channel = user['channel']
 
             # 当前 channel 已有其他 user 绑定了这个 code
-            if self.users.find({'code': code, 'channel': current_channel}):
+            if self.users.find_one({'code': code, 'channel': current_channel}):
                 logger.info(f'[DB] code: {code} used failed by: [{nickname}]({user_id}), channel: {current_channel}, reason: already used')
                 return False
 

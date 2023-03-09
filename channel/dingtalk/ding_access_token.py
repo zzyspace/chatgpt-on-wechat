@@ -2,7 +2,8 @@ import threading
 import time
 import requests
 import json
-from config import conf, dynamic_conf
+from config import conf, dynamic_conf, channel_conf
+from common import const
 from common.utils import logger
 
 class AccessToken:
@@ -17,8 +18,8 @@ class AccessToken:
     def update_token(self):
         while True:
             # Request access_token from the API
-            app_key = dynamic_conf()['global']['ding_app_key']
-            app_secret = dynamic_conf()['global']['ding_app_secret']
+            app_key = channel_conf(const.DINGTALK).get('app_key')
+            app_secret = channel_conf(const.DINGTALK).get('app_secret')
             response = requests.post("https://api.dingtalk.com/v1.0/oauth2/accessToken",
                                     data=json.dumps({"appKey": app_key,"appSecret": app_secret}),
                                     headers={"Content-Type":"application/json"})  

@@ -17,7 +17,7 @@ from common.utils import logger
 from concurrent.futures import ThreadPoolExecutor
 from channel.dingtalk.tornado_utils import Application, route
 from channel.channel import Channel
-from config import conf, dynamic_conf
+from config import conf, dynamic_conf, channel_conf
 from channel.dingtalk.ding_access_token import AccessToken
 
 # thread_pool = ThreadPoolExecutor(max_workers=8)
@@ -33,7 +33,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
     def post(self):
         timestamp = self.request.headers.get('timestamp', None)  
         sign = self.request.headers.get('sign', None)  
-        app_secret = dynamic_conf()['global']['ding_app_secret']
+        app_secret = channel_conf(const.DINGTALK).get('app_secret')
         app_secret_enc = app_secret.encode('utf-8')  
         string_to_sign = '{}\n{}'.format(timestamp, app_secret)  
         string_to_sign_enc = string_to_sign.encode('utf-8')  
@@ -50,7 +50,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
     def push_ding(self, msg, uid):
         try:
             # https://open.dingtalk.com/document/isvapp/send-single-chat-messages-in-bulk
-            app_key = dynamic_conf()['global']['ding_app_key']
+            app_key = channel_conf(const.DINGTALK).get('app_key')
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
             data=json.dumps({
                 "robotCode":app_key,
@@ -65,7 +65,7 @@ class DingtalkChannel(tornado.web.RequestHandler, Channel):
 
     def push_img_ding(self, img, uid):
         try:
-            app_key = dynamic_conf()['global']['ding_app_key']
+            app_key = channel_conf(const.DINGTALK).get('app_key')
             resp = requests.post("https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend",
             data=json.dumps({
                 "robotCode":app_key,
