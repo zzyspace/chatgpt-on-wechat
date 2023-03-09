@@ -148,9 +148,10 @@ class WechatMPServiceChannel(Channel):
 
         # 新人
         if self._payment.is_newbie(user_id, nickname):
+            logger.info(f'[WX_MP_SERVICE] new user: {user_id}')
             # pass
-            reply = self._reply.reply_newbie(user_id)
-            self.send(reply, user_id)
+            # reply = self._reply.reply_newbie(user_id)
+            # self.send(reply, user_id)
             # self._fetch_user_info(user_id)
         # 敏感词
         if sensitive_detector.detect(content):
